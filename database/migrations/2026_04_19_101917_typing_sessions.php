@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('typing_sessions', function (Blueprint $table) {
             $table->id();
-            $table->foreignUuid('user_id')->constrained()->onDelete('cascade');
+            $table->foreignUuid('user_id')->nullable()->constrained()->onDelete('cascade');
             $table->integer('wpm_score');
             $table->integer('accuracy_percentage');
             $table->integer('duration_seconds');

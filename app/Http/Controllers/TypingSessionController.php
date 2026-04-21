@@ -10,34 +10,34 @@ class TypingSessionController extends Controller
 {
     public function store(Request $request)
     {
-        // 1. I-validate ang incoming data base sa kung ano lang ang nasa Fillable mo
-        $validated = $request->validate([
-            'wpm_score' => 'required|integer',
-            'accuracy_percentage' => 'required|numeric',
-            'duration_seconds' => 'required|integer',
-        ]);
-
-        // 2. I-setup ang default User ID (null kapag Guest)
-        $userId = null;
-
-        // 3. I-check kung may naka-login na user
-        // Siguraduhing gamit ang API guard (Sanctum) kung React frontend ang gamit
-        if (Auth::guard('sanctum')->check()) { 
-            $userId = Auth::guard('sanctum')->id();
+        // [BAGONG LOGIC]: I-check agad kung Guest. Kung walang naka-login, wag i-save.
+        if (!Auth::check()) {
+            return response()->json([
+                'message' => 'Guest player session. Hindi isinave sa database.'
+            ], 200);
         }
 
-        // 4. I-save ang laro sa database
+        // 1. I-validate ang incoming data kasama ang difficulty_played
+        $validated = $request->validate([
+            'wpm_score'           => 'required|integer',
+            'accuracy_percentage' => 'required|numeric',
+            'duration_seconds'    => 'required|integer',
+            'difficulty_played'   => 'required|string',
+        ]);
+
+        // 2. I-save sa database (Dahil pumasa sa Auth::check(), siguradong may ID ito)
         $session = TypingSession::create([
-            'user_id'             => $userId,
+            'user_id'             => Auth::id(),
             'wpm_score'           => $validated['wpm_score'],
             'accuracy_percentage' => $validated['accuracy_percentage'],
             'duration_seconds'    => $validated['duration_seconds'],
+            'difficulty_played'   => $validated['difficulty_played'],
         ]);
 
-        // 5. Ibalik ang data sa React
+        // 3. Ibalik ang data sa React
         return response()->json([
             'message' => 'Typing session saved successfully!',
-            'data' => $session
+            'data'    => $session
         ], 201);
     }
 }

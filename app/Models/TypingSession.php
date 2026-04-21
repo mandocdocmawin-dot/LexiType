@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-#[Fillable(['user_id', 'wpm_score', 'accuracy_percentage', 'duration_seconds'])]
+#[Fillable(['user_id', 'wpm_score', 'accuracy_percentage', 'duration_seconds', 'difficulty_played'])]
 #[Hidden(['created_at', 'updated_at'])]
 class TypingSession extends Model
 {

@@ -172,21 +172,35 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
         clearInterval(timerRef.current);
         setStatus('finished');
         
-        // Final computation bago ipasa
-        computeStats(); 
+        // I-compute ang final stats
+        const finalWpm = wpm; 
+        const finalAccuracy = accuracy; 
 
+        // [BAGONG LOGIC]: I-check kung Guest. Kapag Guest, walang console.log, tahimik lang na ihihinto ang save.
+        if (!auth.user) {
+            return; 
+        }
+
+        // Kung umabot dito, ibig sabihin may naka-login na user. I-save na natin!
         try {
-            await axios.post('/typing-sessions', {
-                wpm_score: wpm,
-                accuracy_percentage: accuracy,
+            const response = await axios.post('/typing-sessions', {
+                wpm_score: finalWpm, 
+                accuracy_percentage: finalAccuracy,
                 duration_seconds: duration,
+                difficulty_played: 'normal',
+            }, {
+                withCredentials: true,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
             });
-            console.log('Session saved successfully!');
+            // Pwede mo ring tanggalin ang console.log na ito kung gusto mong sobrang linis ng console
+            // console.log('Session saved successfully sa Backend!', response.data);
         } catch (error) {
-            console.error('Failed to save session:', error);
+            console.error('Failed to save session:', error.response?.data || error.message);
         }
     };
-
     // --- LOGIC: RESTART ---
     const resetTest = () => {
         clearInterval(timerRef.current);
