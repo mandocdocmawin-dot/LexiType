@@ -113,6 +113,79 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
         }
     };
 
+    // Cache lists of texts per category+difficulty for deterministic cycling
+    const [textsCache, setTextsCache] = useState({});
+
+    const uiToDbCategory = (cat) => {
+        if (cat === 'snippet') return 'code_snippets';
+        if (cat === 'quote') return 'quotes';
+        return 'paragraphs';
+    };
+
+    // Cycle to the next text for (category, difficulty). Loops back to first when at the end.
+    const cycleGameMode = async (newCategory, newDifficulty) => {
+        // Update UI category immediately
+        setActiveCategory(newCategory);
+
+        const dbCategory = uiToDbCategory(newCategory);
+        const key = `${dbCategory}_${newDifficulty}`;
+
+        let cache = textsCache[key];
+
+        if (!cache) {
+            try {
+                const listResp = await axios.get('/typing-texts/list', {
+                    params: { category: dbCategory, difficulty_level: newDifficulty },
+                    withCredentials: true,
+                    headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+                });
+
+                const list = listResp.data?.data || [];
+                if (!Array.isArray(list) || list.length === 0) {
+                    alert('No texts available for this category/difficulty.');
+                    return;
+                }
+
+                cache = { list, index: -1 };
+                setTextsCache(prev => ({ ...prev, [key]: cache }));
+            } catch (error) {
+                console.error('Error fetching texts list:', error);
+                alert('Failed to fetch texts for cycling.');
+                return;
+            }
+        }
+
+        const len = cache.list.length;
+        const nextIndex = (cache.index + 1) % len;
+        const textObj = cache.list[nextIndex];
+
+        // Update cache index
+        setTextsCache(prev => ({ ...prev, [key]: { list: cache.list, index: nextIndex } }));
+
+        // Map difficulty -> duration (seconds)
+        const diffToSeconds = (di) => {
+            if (di === 1) return 30;
+            if (di === 2) return 60;
+            if (di === 3) return 120;
+            return 60;
+        };
+
+        const durationSeconds = diffToSeconds(newDifficulty);
+        setActiveDifficulty(newDifficulty);
+        setDuration(durationSeconds);
+
+        if (textObj && textObj.content) {
+            setWords(textObj.content.trim().split(/\s+/));
+            setTypedWords([]);
+            setCurrentInput('');
+            setStatus('waiting');
+            setMistakes(0);
+            setTimeLeft(durationSeconds);
+        } else {
+            alert('Selected text is invalid.');
+        }
+    };
+
     // Awtomatikong kumuha ng text pagka-load ng page
     useEffect(() => {
         changeGameMode('snippet', 2);
@@ -470,17 +543,17 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                             {/* Difficulty */}
                             <div className="flex items-center gap-4">
                                 <button 
-                                    onClick={() => changeGameMode(activeCategory, 1)}
+                                    onClick={() => cycleGameMode(activeCategory, 1)}
                                     className={`text-xs font-headline font-bold tracking-widest transition-colors hover:text-[#dae2fd] ${activeDifficulty === 1 ? 'text-[#bbc3ff]' : 'text-[#8e8fa2]'}`}>
                                     easy
                                 </button>
                                 <button 
-                                    onClick={() => changeGameMode(activeCategory, 2)}
+                                    onClick={() => cycleGameMode(activeCategory, 2)}
                                     className={`text-xs font-headline font-bold tracking-widest transition-colors hover:text-[#dae2fd] ${activeDifficulty === 2 ? 'text-[#bbc3ff]' : 'text-[#8e8fa2]'}`}>
                                     normal
                                 </button>
                                 <button 
-                                    onClick={() => changeGameMode(activeCategory, 3)}
+                                    onClick={() => cycleGameMode(activeCategory, 3)}
                                     className={`text-xs font-headline font-bold tracking-widest transition-colors hover:text-[#dae2fd] ${activeDifficulty === 3 ? 'text-[#bbc3ff]' : 'text-[#8e8fa2]'}`}>
                                     hard
                                 </button>

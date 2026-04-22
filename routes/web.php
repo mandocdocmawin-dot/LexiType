@@ -28,6 +28,7 @@ Route::get('/about', function () {
 Route::post('/typing-sessions', [TypingSessionController::class, 'store']);
 Route::get('/typing-texts/random', [SystemTypingTextController::class, 'getRandomText']);
 Route::get('/typing-texts/difficulties', [SystemTypingTextController::class, 'getAvailableDifficulties']);
+Route::get('/typing-texts/list', [SystemTypingTextController::class, 'getTextsList']);
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

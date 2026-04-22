@@ -131,6 +131,50 @@ class SystemTypingTextController extends Controller
     }
 
     /**
+     * Return all active texts for a given category and difficulty (ordered by id).
+     * This is used by the frontend to allow cycling through a known list of texts.
+     */
+    public function getTextsList(Request $request)
+    {
+        $validated = $request->validate([
+            'category' => 'required|string',
+            'difficulty_level' => 'required',
+        ]);
+
+        $category = $validated['category'];
+        $difficulty = $validated['difficulty_level'];
+
+        // Normalize difficulty: accept either numeric (1,2,3) or strings ('easy','medium','hard').
+        $map = [1 => 'easy', 2 => 'medium', 3 => 'hard'];
+        $diffText = null;
+        if (is_numeric($difficulty)) {
+            $diffInt = intval($difficulty);
+            $diffText = $map[$diffInt] ?? null;
+        } else {
+            $lower = strtolower($difficulty);
+            if (in_array($lower, ['easy', 'medium', 'hard'])) {
+                $diffText = $lower;
+            }
+        }
+
+        $texts = SystemTypingText::where('category', $category)
+            ->where('is_active', true)
+            ->where(function ($q) use ($difficulty, $diffText) {
+                $q->where('difficulty_level', $difficulty);
+                if ($diffText !== null) {
+                    $q->orWhere('difficulty_level', $diffText);
+                }
+            })
+            ->orderBy('id', 'asc')
+            ->get();
+
+        return response()->json([
+            'message' => 'Success',
+            'data' => $texts
+        ], 200);
+    }
+
+    /**
      * Returns list of available difficulty levels for a category (normalized to 'easy','medium','hard')
      */
     public function getAvailableDifficulties(Request $request)

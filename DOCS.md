@@ -1,209 +1,280 @@
-# LexiType: Advanced Typing Practice and Analytics Platform
+# LexiType — Project Documentation
 
-## Project Overview
+A consolidated reference describing the application's key features, their implementations, data schemas, routes, and how to run the project locally. Use this file as the source to paste into other docs or README pages.
 
-LexiType is a comprehensive web-based typing practice platform designed to help users improve their typing speed, accuracy, and technique through structured exercises, performance tracking, and intelligent recommendations. The application combines modern web technologies with a sophisticated backend architecture to deliver a seamless typing learning experience.
+---
 
-The platform caters to users of varying skill levels by offering both system-provided typing exercises and personalized custom exercises. Users can track their progress through detailed performance metrics, receive AI-driven feedback based on their keystroke patterns, and compare their achievements on an interactive leaderboard. The administrative interface provides comprehensive tools for managing users, overseeing system exercises, and reviewing user feedback.
+## Table of contents
 
-## System Architecture: Database Design
+- Overview
+- Quick start
+- Features
+	- Authentication & Authorization
+	- Typing Exercises (System + Custom)
+	- Typing Sessions & Keystroke Tracking
+	- AI Recommendations
+	- User Profiles, Stats & Feedback
+	- Admin / Policies
+- Data models & schema (summary)
+- Controllers & routes (important endpoints)
+- Seed data & factories
+- Tests
+- Running & deployment notes
+- Key files and where to find them
 
-### Database Overview
+---
 
-LexiType utilizes a relational database architecture with nine core tables, each serving a distinct purpose in the system. The database employs a normalized structure that maintains referential integrity through cascading relationships, ensuring that user data is properly managed throughout the application lifecycle.
+## Overview
 
-### Core Database Tables and Relationships
+LexiType is a Laravel + Inertia typing-practice application that supports:
 
-#### User Management
+- System-provided typing texts grouped by category & difficulty.
+- User-created custom exercises.
+- Typing sessions with detailed keystroke mistake tracking.
+- Per-user statistics and profiles.
+- AI-generated recommendations (stored for users).
+- Authentication and user management (standard Laravel auth routes are available).
 
-The foundation of the system rests on the **Users table**, which stores essential user account information including unique identifiers (UUID), user names, email addresses with uniqueness constraints, email verification status, and encrypted passwords. This table serves as the primary entity from which all user-related data branches.
+This document summarizes how those features are implemented in the codebase so you can paste it into other documentation or extend the system.
 
-Connected to the Users table is the **User Profiles table**. This table extends the core user data by allowing users to maintain biographical information through a dedicated bio field. Each user can have one user profile, establishing a one-to-one relationship that enhances the user's personal branding within the platform.
+---
 
-#### Performance and Statistics Tracking
+## Quick start
 
-The **User Stats table** aggregates typing performance metrics for each user. It maintains three key statistics: average words-per-minute (WPM), highest WPM achieved in any session, and the total count of typing tests completed. These aggregated metrics provide users with an overview of their typing proficiency and progress over time. This table maintains a one-to-one relationship with the Users table, ensuring each user has exactly one statistics record.
+Prerequisites:
 
-The **Typing Sessions table** records every individual typing practice session. For each session, the system captures the words-per-minute score, accuracy percentage, session duration in seconds, and the difficulty level attempted. This granular data collection allows for comprehensive performance analysis and trend identification over multiple sessions. A user can have many typing sessions, establishing a one-to-many relationship with the Users table.
+- PHP 8.x
+- Composer
+- Node.js + npm
+- A database supported by Laravel (e.g., MySQL, SQLite for local testing)
 
-#### Keystroke Analysis
+Common steps to run locally:
 
-The **Keystroke Mistakes table** provides detailed insights into typing errors at the character level. Each keystroke mistake record documents what character was expected to be typed, what character was actually typed, and the response time in milliseconds. These records are directly associated with specific typing sessions through a one-to-many relationship, enabling analysis of error patterns and typing behavior on a keystroke-by-keystroke basis.
+1. Install PHP dependencies: `composer install`
+2. Install JS dependencies and build assets: `npm install` then `npm run dev`
+3. Copy environment file and generate app key:
 
-#### Exercise Management
+```
+cp .env.example .env
+php artisan key:generate
+```
 
-The **System Typing Texts table** contains typing exercises provided by the system. Each exercise entry includes categorization information, the textual content to be typed, a difficulty level indicator (Easy as 1, Medium as 2, Hard as 3), and an active status flag. System administrators manage these exercises, and users are assigned them based on their proficiency level. This creates a one-to-many relationship where users can access multiple system typing texts.
+4. Configure your DB settings in `.env` and run migrations + seeders:
 
-The **Custom Exercises table** enables users to create personalized typing practice materials. Each custom exercise contains the custom text to be typed and a completion status indicator. Users maintain complete ownership of their custom exercises, with each user capable of creating and managing multiple custom exercise entries.
+```
+php artisan migrate --seed
+```
 
-#### Feedback and Recommendations
+5. Start local server:
 
-The **User Feedbacks table** collects user feedback and suggestions through text messages submitted by users. This table maintains a one-to-many relationship with Users, allowing users to submit multiple feedback entries over time. This feedback mechanism provides valuable insights into user experience and platform improvement opportunities.
+```
+php artisan serve
+```
 
-The **AI Recommendations table** stores intelligent recommendations generated for users based on their typing performance. Each recommendation record contains a feedback message providing user-specific guidance and a focus letters field identifying specific characters or key combinations that require practice attention. The system generates multiple recommendations per user, maintaining a one-to-many relationship with the Users table.
+6. Run tests:
 
-### Data Integrity and Relationships
+```
+php artisan test
+```
 
-All user-related tables implement cascading delete operations, ensuring that when a user account is deleted, all associated data (profiles, statistics, sessions, feedback, recommendations, exercises) is automatically removed from the database. This maintains referential integrity and prevents orphaned records.
+---
 
-## Frontend Architecture: UI/UX Structure
+## Features
 
-### Frontend Technology Stack
+The following sections describe the key features and how they are implemented.
 
-LexiType employs a modern JavaScript-based frontend architecture utilizing React as the view library and Inertia.js as the adapter layer for seamless server-side integration. The frontend is structured through the Vite build tool, providing fast development and optimized production builds.
+### Authentication & Authorization
 
-### Folder Organization
+- Summary: Standard Laravel auth (routes under [routes/auth.php](routes/auth.php)). Some endpoints require `auth`/`sanctum` middleware.
+- Implementation details:
+	- Model: `app/Models/User.php` — uses `HasUuids`, relationships to profile, stats, sessions, etc.
+	- Routes: `routes/auth.php` provides registration, login, password reset, email verification and logout endpoints.
+	- Policies: `app/Policies/UserPolicy.php` exists for future user-related rules (currently minimal).
 
-#### Layouts Directory
+See: [routes/auth.php](routes/auth.php) and [app/Models/User.php](app/Models/User.php)
 
-The **Layouts** directory contains reusable page framework components that provide consistent navigation, headers, and structural elements across the application.
+### Typing Exercises (System + Custom)
 
-The **GuestLayout** serves users who have not yet authenticated. It provides a minimalist interface suitable for the Welcome page and authentication forms, with navigation elements for Login and Register options.
+- Summary: Two main exercise sources: system-managed texts and user-created custom exercises.
 
-The **AuthenticatedLayout** is the primary layout for logged-in users. It includes a persistent navigation bar with the application logo, dashboard link, and a user dropdown menu providing access to profile settings and logout functionality. This layout forms the wrapper for all user-accessible features and content.
+- System typing texts
+	- Model: `app/Models/SystemTypingText.php`
+	- Migration: `database/migrations/2026_04_19_100039_system_typing_texts_table.php`
+	- Factory: `database/factories/SystemTypingTextFactory.php` (creates realistic sample content)
+	- Seeder: `database/seeders/SystemTypingTextJsonSeeder.php` reads `database/seeders/data/system_typing_texts.json` for deterministic seed data.
+	- Controller & routes: `app/Http/Controllers/SystemTypingTextController.php` exposes:
+		- `GET /typing-texts/random` — query params: `category`, `difficulty_level` (accepts 1/2/3 or 'easy'/'medium'/'hard'). Returns a random matching active text and fallback behavior when exact difficulty not available.
+		- `GET /typing-texts/list` — returns ordered list for given category+difficulty.
+		- `GET /typing-texts/difficulties` — returns available difficulties for a category.
 
-The **AdminLayout** (if implemented) provides an extended interface for administrative users, including additional navigation elements for administrative functions such as user management and system configuration.
+	- DB fields (from migration):
+		- `id`, `user_id` (UUID), `category` (text), `content` (text), `difficulty_level` (string), `is_active` (boolean), timestamps.
 
-#### Components Directory
+	- Example request (get random):
 
-The **Components** directory contains reusable UI elements and functional components that are composed together to build pages.
+```
+GET /typing-texts/random?category=paragraphs&difficulty_level=2
+```
 
-Common components include **TextInput** for text entry fields, **InputLabel** for form labels, **InputError** for validation error display, **Modal** for dialog boxes, **Dropdown** for navigation menus, and various button components such as **PrimaryButton**, **SecondaryButton**, and **DangerButton**.
+See: [app/Models/SystemTypingText.php](app/Models/SystemTypingText.php) and [app/Http/Controllers/SystemTypingTextController.php](app/Http/Controllers/SystemTypingTextController.php)
 
-The **AiChatModal** component (designated for future development) will implement a floating modal interface through which users can interact with the AI recommendation system, asking questions and receiving personalized typing improvement suggestions.
+- Custom exercises
+	- Model: `app/Models/CustomExercise.php`
+	- Migration: `database/migrations/2026_04_19_095806_custom_exercises_table.php`
+	- Factory: `database/factories/CustomExerciseFactory.php`
+	- Stores `custom_text` and `is_completed` and belongs to a `User`.
 
-Additional components include **Leaderboard** for displaying competitive rankings, **Feedback** for collecting and displaying user comments, and **Checkbox** for boolean input fields.
+See: [app/Models/CustomExercise.php](app/Models/CustomExercise.php)
 
-#### Pages Directory
+### Typing Sessions & Keystroke Tracking
 
-The **Pages** directory contains complete page components that represent distinct views in the application.
+- Summary: When a user completes a typing session, the frontend posts session data and optional detailed keystroke mistakes.
 
-The main page structure includes **Welcome.jsx**, which serves as the landing page for unauthenticated users, presenting marketing content and login/registration options. The **Dashboard.jsx** serves as the primary authenticated user landing page. The **AboutApp.jsx** page provides informational content about the LexiType platform and its features.
+- Implementation details:
+	- Model: `app/Models/TypingSession.php`
+	- Migration: `database/migrations/2026_04_19_101917_typing_sessions.php`
+	- Keystroke mistakes model: `app/Models/keystrokeMistake.php`
+	- Mistakes migration: `database/migrations/2026_04_19_102810_keystroke_mistakes_table.php`
+	- Controller & route: `app/Http/Controllers/TypingSessionController.php`
+		- `POST /typing-sessions` — accepts JSON body:
 
-##### Profile Section
+```
+{
+	"wpm_score": 55,
+	"accuracy_percentage": 92,
+	"duration_seconds": 60,
+	"difficulty_played": "medium",
+	"mistakes": [
+		{ "expected_character": "e", "typed_char": "r", "time_to_press_ms": 150 },
+		...
+	]
+}
+```
 
-The Profile section contains **Edit.jsx**, the main profile editing interface. Within this section, the **Partials** subfolder contains specialized forms: **UpdateProfileInformationForm.jsx** for personal information updates, **UpdatePasswordForm.jsx** for password changes, and **DeleteUserForm.jsx** for account deletion.
+		- Requires authenticated user (returns 401 if unauthenticated).
+		- Controller validates fields, creates a `TypingSession`, and optionally creates `keystrokeMistake` records attached to the session.
 
-##### User Section
+	- DB fields (summary):
+		- `typing_sessions`: `id`, `user_id` (UUID), `wpm_score` (int), `accuracy_percentage` (int), `duration_seconds` (int), `difficulty_played` (string), timestamps.
+		- `keystroke_mistakes`: `id`, `typing_session_id` (FK), `expected_character` (text), `typed_char` (text), `time_to_press_ms` (text/string), timestamps.
 
-The User section provides user-specific views including **Profile.jsx** for viewing user profile information and **Stats.jsx** for detailed performance statistics and progress tracking.
+See: [app/Http/Controllers/TypingSessionController.php](app/Http/Controllers/TypingSessionController.php)
 
-##### Admin Section
+### AI Recommendations
 
-The Admin section restricts access to administrative users and includes:
+- Summary: AI-generated recommendations are persisted in the `a_i_recommendations` table; the project stores recommendation messages and focused letters for practice.
 
-- **Overview.jsx**: A dashboard providing system-wide statistics and administrative controls
-- **ManageUsers.jsx**: Interface for user account management, including suspension, role assignment, and account oversight
-- **FeedbackInbox.jsx**: Centralized collection and review of all user feedback submissions
-- **CustomExercise.jsx**: Administrative interface for managing and approving user-created custom exercises
+- Implementation details:
+	- Model: `app/Models/AIRecommendation.php`
+	- Migration: `database/migrations/2026_04_19_100708_a_i_recommendations_table.php`
+	- Factory: `database/factories/AIRecommendationFactory.php`
+	- The model stores `feedback_message` and `focus_letters`. Generation logic is left to controller/service code or can be implemented as a queued job analyzing recent `TypingSession` and `keystroke_mistakes`.
 
-## User Roles and Access Control
+See: [app/Models/AIRecommendation.php](app/Models/AIRecommendation.php)
 
-### Guest Access Level
+### User Profiles, Stats & Feedback
 
-Users who have not authenticated with the system operate at the Guest access level. Guest users can view the Welcome page, which contains marketing information about LexiType and its features. The Welcome page provides direct access to the authentication system through Login and Register options. Guests cannot access any typing exercises, performance tracking features, or personal user accounts.
+- User profile:
+	- Model: `app/Models/UserProfile.php`
+	- Migration: `database/migrations/2026_04_19_095329_user_profiles_table.php`
+	- Simple `bio` field and relation to `User`.
 
-### Authenticated User Access Level
+- User stats:
+	- Model: `app/Models/UserStat.php`
+	- Migration: `database/migrations/2026_04_19_101751_user_stats_table.php`
+	- Tracks `average_wpm`, `highest_wpm`, `total_tests_taken`.
 
-Upon successful authentication, users gain access to the Authenticated User feature set. These users can:
+- User feedback:
+	- Model: `app/Models/UserFeedback.php`
+	- Migration: `database/migrations/2026_04_19_095617_user_feedbacks_table.php`
+	- Stores user messages for product feedback.
 
-- Access the Dashboard as their primary landing page after login
-- View and edit their personal profile information, including biographical data
-- Create and manage custom typing exercises tailored to their specific needs
-- Participate in typing practice sessions using both system-provided and custom exercises
-- Track detailed performance statistics including average WPM, highest WPM, and session history
-- View keystroke-level error analysis from their typing sessions
-- Receive AI-generated recommendations based on their performance patterns
-- Submit feedback and suggestions to improve the platform
-- View competitive rankings on the Leaderboard
-- Change account password and manage authentication credentials
+See: [app/Models/UserProfile.php](app/Models/UserProfile.php), [app/Models/UserStat.php](app/Models/UserStat.php), [app/Models/UserFeedback.php](app/Models/UserFeedback.php)
 
-### Administrator Access Level
+### Admin / Policies
 
-Administrative users possess elevated permissions and access to system-wide management capabilities. In addition to all Authenticated User features, administrators can:
+- `app/Policies/SystemTypingTextPolicy.php` controls creation/updating/deletion of system texts; only users with `role === 'admin'` are allowed to manage system texts (policy checks `user->role`).
 
-- Access the Admin Overview dashboard displaying system-wide statistics and metrics
-- Manage user accounts through the Manage Users interface, including account status and role adjustments
-- Review all user feedback submissions through the Feedback Inbox
-- Approve, modify, or reject user-created custom exercises through the Custom Exercise management interface
-- Create and manage system typing texts with varying difficulty levels
-- Configure system parameters and maintain platform health
+See: [app/Policies/SystemTypingTextPolicy.php](app/Policies/SystemTypingTextPolicy.php)
 
-## Key Components and Features
+---
 
-### Typing Session Architecture
+## Data models & schema (summary)
 
-When users initiate a typing practice session, the system captures comprehensive performance data. Each session records the user's typing speed measured in words-per-minute, their accuracy as a percentage, the session duration, and the difficulty level of the exercise. 
+Below are the main tables and a quick summary of columns (see each migration for exact schema):
 
-At the keystroke level, the system records each character that was incorrectly typed, what was expected, and the response time in milliseconds. This granular data collection enables sophisticated analysis of typing patterns, common mistakes, and areas requiring improvement.
+- `users` — standard Laravel user table (UUIDs used for some relations via `HasUuids` on `User` model).
+- `user_profiles` — `user_id`, `bio`, timestamps.
+- `user_stats` — `user_id`, `average_wpm`, `highest_wpm`, `total_tests_taken`, timestamps.
+- `user_feedbacks` — `user_id`, `message`, timestamps.
+- `system_typing_texts` — `user_id`, `category`, `content`, `difficulty_level`, `is_active`, timestamps.
+- `custom_exercises` — `user_id`, `custom_text`, `is_completed`, timestamps.
+- `typing_sessions` — `user_id`, `wpm_score`, `accuracy_percentage`, `duration_seconds`, `difficulty_played`, timestamps.
+- `keystroke_mistakes` — `typing_session_id`, `expected_character`, `typed_char`, `time_to_press_ms`, timestamps.
+- `a_i_recommendations` — `user_id`, `feedback_message`, `focus_letters`, timestamps.
 
-### AI Recommendation System
+---
 
-The AI Recommendations feature analyzes user performance data to generate personalized improvement guidance. Each recommendation contains two key components: a feedback message providing contextual guidance specific to the user's performance, and a focus letters field highlighting specific characters or key combinations that require additional practice attention.
+## Controllers & routes (important endpoints)
 
-This intelligent system learns from user performance trends and identifies problematic areas, enabling users to focus their practice efforts on the most impactful improvements.
+- `POST /typing-sessions` — `TypingSessionController@store` — save a typing session and associated keystroke mistakes (auth required).
+- `GET /typing-texts/random` — `SystemTypingTextController@getRandomText` — accepts `category` + `difficulty_level`.
+- `GET /typing-texts/list` — `SystemTypingTextController@getTextsList` — list texts for a category/difficulty.
+- `GET /typing-texts/difficulties` — `SystemTypingTextController@getAvailableDifficulties`.
 
-### Custom Exercise Framework
+Auth and profile endpoints are registered under `routes/auth.php` and `ProfileController` (Inertia pages) for user profile edits.
 
-Users can create custom typing exercises using any text content, allowing for practice tailored to their specific interests or learning objectives. Each custom exercise contains the text content to be practiced and a completion status indicator. This feature enables users to practice with domain-specific terminology, programming syntax, foreign language texts, or any content relevant to their typing goals.
+See: [routes/web.php](routes/web.php) and related controllers in [app/Http/Controllers](app/Http/Controllers)
 
-### Performance Metrics and Statistics
+---
 
-The User Stats table maintains aggregated performance metrics that provide a high-level overview of user progress. These include average WPM calculated across all sessions, the highest WPM achieved in any single session, and the cumulative count of typing tests completed. This aggregated view allows users to quickly assess their overall typing proficiency and track long-term progress.
+## Seed data & factories
 
-### User Feedback System
+- Factories exist for main models (`database/factories/*`). The `SystemTypingTextFactory` generates realistic sample texts by category and difficulty.
+- `database/seeders/SystemTypingTextJsonSeeder.php` loads `database/seeders/data/system_typing_texts.json` for deterministic seed data.
+- Run the full seed via `php artisan db:seed` (or `php artisan migrate --seed`).
 
-Users can submit feedback regarding their experience with the LexiType platform. This feedback is collected through the feedback submission interface and stored in the User Feedbacks table. Administrative users can access all feedback through the Feedback Inbox, enabling continuous improvement of the platform based on user input.
+---
 
-### Leaderboard and Social Features
+## Tests
 
-The Leaderboard component displays competitive rankings of users based on their typing performance metrics. This social feature encourages user engagement and friendly competition while allowing users to benchmark their performance against the broader user community.
+- The `tests` directory contains feature tests for authentication and profile flows and unit tests. Use `php artisan test` to run the test suite.
 
-## Data Flow and Integration
+---
 
-### Session Data Collection Pipeline
+## Running & deployment notes
 
-When a user completes a typing exercise, the following data flow occurs:
+- Local development uses Vite and Inertia. Use `npm run dev` (or `npm run build` for production) to compile frontend assets.
+- Serve the app with `php artisan serve` or use your preferred web server configuration.
+- Use `php artisan queue:work` if you implement queued jobs (e.g., recommendation generation, long-running analysis).
 
-1. The frontend application captures keystroke-by-keystroke data during the typing session
-2. Session completion triggers data transmission to the backend server
-3. The backend processes the session data and creates a Typing Session record with aggregate metrics
-4. For each keystroke error detected, the system creates a Keystroke Mistake record
-5. User Stats are updated to reflect the new session's impact on average WPM and total tests taken
-6. The system optionally generates or updates AI Recommendations based on the new data
+---
 
-### Recommendation Generation Pipeline
+## Key files (quick index)
 
-The AI Recommendation system operates asynchronously to user session data:
+- Models: [app/Models](app/Models)
+	- `app/Models/SystemTypingText.php`
+	- `app/Models/CustomExercise.php`
+	- `app/Models/TypingSession.php`
+	- `app/Models/keystrokeMistake.php`
+	- `app/Models/AIRecommendation.php`
+	- `app/Models/UserProfile.php`
+	- `app/Models/UserStat.php`
+	- `app/Models/UserFeedback.php`
 
-1. Session keystroke data is analyzed for error patterns
-2. Frequently occurring character mistakes are identified
-3. The system generates a recommendation entry with guidance and focus letters
-4. The recommendation becomes available to the user through the AI Chat Modal or profile page
+- Migrations: `database/migrations/` (see the filenames starting with the dates for each table). Examples:
+	- `2026_04_19_100039_system_typing_texts_table.php`
+	- `2026_04_19_095806_custom_exercises_table.php`
+	- `2026_04_19_101917_typing_sessions.php`
+	- `2026_04_19_102810_keystroke_mistakes_table.php`
 
-### Administrative Data Aggregation
+- Controllers: [app/Http/Controllers](app/Http/Controllers)
+	- `SystemTypingTextController.php` — endpoints for getting texts
+	- `TypingSessionController.php` — store session + mistakes
+	- `ProfileController.php` — user profile management (Inertia)
 
-Administrative views aggregate data from multiple tables to present system-wide insights:
+- Seeders & data: `database/seeders/SystemTypingTextJsonSeeder.php` and `database/seeders/data/system_typing_texts.json`.
 
-1. The Overview dashboard queries user statistics to display total active users and average platform performance
-2. Feedback statistics are compiled from the User Feedbacks table
-3. Custom Exercise approval status is tracked and presented for administrative action
-4. System Typing Texts status and usage metrics inform content management decisions
+---
 
-## Technology Stack Summary
 
-### Backend Architecture
-
-LexiType is built on the Laravel framework with PHP, providing a robust server-side foundation. The application uses a PostgreSQL or MySQL relational database with eloquent ORM for database interaction. Laravel's built-in authentication system handles user credential management and session handling.
-
-### Frontend Architecture
-
-The frontend utilizes React for component-based UI development with Inertia.js serving as the bridge layer between frontend and backend. Tailwind CSS provides utility-first styling, enabling rapid UI development with consistent design patterns. The Vite build tool provides fast development and optimized production builds.
-
-### Development and Testing
-
-The project includes PHPUnit for backend testing and Pest for BDD-style testing. ESLint provides frontend code quality analysis. The application includes comprehensive database factories and seeders for testing and development scenarios.
-
-## Conclusion
-
-LexiType represents a comprehensive platform for typing skill development through modern web technologies and sophisticated data analysis. The system architecture balances user accessibility with administrative control, providing both casual users and power users with appropriate tools for their needs. The database design ensures data integrity while supporting complex queries for analytics and recommendations. The frontend architecture provides a responsive, intuitive user experience optimized for typing practice workflows.

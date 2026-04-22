@@ -2,55 +2,109 @@
   {
     "category": "code_snippets",
     "difficulty_level": "easy",
-    "content": "const name = 'LexiType';\nconsole.log(name);",
+    "content": "let score = 0;\nscore += 10;\nconsole.log(score);",
+    "is_active": true
+  },
+  {
+    "category": "code_snippets",
+    "difficulty_level": "easy",
+    "content": "print(\"Hello World\")\nx = 5\ny = 10\nprint(x + y)",
     "is_active": true
   },
   {
     "category": "code_snippets",
     "difficulty_level": "medium",
-    "content": "function add(a, b) {\n  return a + b;\n}\nconsole.log(add(5, 10));",
+    "content": "const colors = ['red', 'green', 'blue'];\ncolors.forEach(color => {\n  console.log(color.toUpperCase());\n});",
+    "is_active": true
+  },
+  {
+    "category": "code_snippets",
+    "difficulty_level": "medium",
+    "content": "def get_user(id):\n    user = db.query(id)\n    return user if user else None",
     "is_active": true
   },
   {
     "category": "code_snippets",
     "difficulty_level": "hard",
-    "content": "const fetchData = async () => {\n  try {\n    const res = await fetch('/api/data');\n    const data = await res.json();\n    return data;\n  } catch (err) {\n    console.error(err);\n  }\n};",
+    "content": "class Singleton {\n  static instance;\n  constructor() {\n    if (Singleton.instance) return Singleton.instance;\n    Singleton.instance = this;\n  }\n}",
+    "is_active": true
+  },
+  {
+    "category": "code_snippets",
+    "difficulty_level": "hard",
+    "content": "template <typename T>\nvoid swap(T& a, T& b) {\n    T temp = std::move(a);\n    a = std::move(b);\n    b = std::move(temp);\n}",
     "is_active": true
   },
   {
     "category": "quotes",
     "difficulty_level": "easy",
-    "content": "Never give up on your dreams.",
+    "content": "Code is like humor. When you have to explain it, it’s bad.",
+    "is_active": true
+  },
+  {
+    "category": "quotes",
+    "difficulty_level": "easy",
+    "content": "Your time is limited, so don't waste it living someone else's life.",
     "is_active": true
   },
   {
     "category": "quotes",
     "difficulty_level": "medium",
-    "content": "Success is not final, failure is not fatal: it is the courage to continue that counts.",
+    "content": "Computers are incredibly fast, accurate, and stupid: humans are incredibly slow, inaccurate, and brilliant.",
+    "is_active": true
+  },
+  {
+    "category": "quotes",
+    "difficulty_level": "medium",
+    "content": "Knowledge is power. Information is liberating. Education is the premise of progress, in every society, in every family.",
     "is_active": true
   },
   {
     "category": "quotes",
     "difficulty_level": "hard",
-    "content": "The intuitive mind is a sacred gift and the rational mind is a faithful servant. We have created a society that honors the servant and has forgotten the gift. - Albert Einstein",
+    "content": "The question of whether machines can think is about as relevant as the question of whether submarines can swim. - Edsger W. Dijkstra",
+    "is_active": true
+  },
+  {
+    "category": "quotes",
+    "difficulty_level": "hard",
+    "content": "It is not the strongest of the species that survive, nor the most intelligent, but the one most responsive to change. - Charles Darwin",
     "is_active": true
   },
   {
     "category": "paragraphs",
     "difficulty_level": "easy",
-    "content": "This is a short paragraph used for easy typing practice.",
+    "content": "Learning to type is a fundamental skill in the digital age. Practice every day to build muscle memory and increase your speed.",
+    "is_active": true
+  },
+  {
+    "category": "paragraphs",
+    "difficulty_level": "easy",
+    "content": "Consistency is key when developing new habits. Even fifteen minutes of focused effort can lead to significant improvements over time.",
     "is_active": true
   },
   {
     "category": "paragraphs",
     "difficulty_level": "medium",
-    "content": "This paragraph is longer and meant to be of medium difficulty. It includes commas, conjunctions, and some capitalization.",
+    "content": "As technology continues to evolve at a rapid pace, software engineers must remain adaptable and curious. Understanding the underlying principles of data structures and algorithms is essential for long-term success.",
+    "is_active": true
+  },
+  {
+    "category": "paragraphs",
+    "difficulty_level": "medium",
+    "content": "Effective communication is just as important as technical proficiency. Being able to explain complex ideas in a simple way is a superpower that bridges the gap between developers and stakeholders.",
     "is_active": true
   },
   {
     "category": "paragraphs",
     "difficulty_level": "hard",
-    "content": "This is a longer and more complex paragraph that includes varied punctuation, longer sentences, and a mixture of uncommon words to raise difficulty for advanced typists.",
+    "content": "The architectural integrity of a system often depends on the meticulous implementation of its design patterns. While abstraction layers provide flexibility, they also introduce cognitive overhead that requires disciplined documentation and testing.",
+    "is_active": true
+  },
+  {
+    "category": "paragraphs",
+    "difficulty_level": "hard",
+    "content": "Asynchronous programming paradigms, while efficient for I/O-bound operations, frequently lead to intricate race conditions and deadlock scenarios if not managed with sophisticated synchronization primitives and thorough code analysis.",
     "is_active": true
   }
 ]
