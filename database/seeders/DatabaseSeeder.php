@@ -30,8 +30,10 @@ class DatabaseSeeder extends Seeder
         //     ->hasAiRecommendations(2)   // Gagawa ng 2 AIRecommendations
         //     ->create();
 
-        // 3. System Typing Texts (Standalone, naayos na natin ang user_id sa factory nito)
-        SystemTypingText::factory(5)->create();
+        // 3. System Typing Texts — use JSON seeder for deterministic content
+        // If you prefer the old random factory data, uncomment the factory line below.
+        $this->call(SystemTypingTextJsonSeeder::class);
+        // SystemTypingText::factory(5)->create();
 
         // // 4. Keystroke Mistakes 
         // // (Pansamantala lang: Gagawa ng 10 random mistakes)

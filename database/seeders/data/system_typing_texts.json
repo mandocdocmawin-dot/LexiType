@@ -1,0 +1,56 @@
+[
+  {
+    "category": "code_snippets",
+    "difficulty_level": "easy",
+    "content": "const name = 'LexiType';\nconsole.log(name);",
+    "is_active": true
+  },
+  {
+    "category": "code_snippets",
+    "difficulty_level": "medium",
+    "content": "function add(a, b) {\n  return a + b;\n}\nconsole.log(add(5, 10));",
+    "is_active": true
+  },
+  {
+    "category": "code_snippets",
+    "difficulty_level": "hard",
+    "content": "const fetchData = async () => {\n  try {\n    const res = await fetch('/api/data');\n    const data = await res.json();\n    return data;\n  } catch (err) {\n    console.error(err);\n  }\n};",
+    "is_active": true
+  },
+  {
+    "category": "quotes",
+    "difficulty_level": "easy",
+    "content": "Never give up on your dreams.",
+    "is_active": true
+  },
+  {
+    "category": "quotes",
+    "difficulty_level": "medium",
+    "content": "Success is not final, failure is not fatal: it is the courage to continue that counts.",
+    "is_active": true
+  },
+  {
+    "category": "quotes",
+    "difficulty_level": "hard",
+    "content": "The intuitive mind is a sacred gift and the rational mind is a faithful servant. We have created a society that honors the servant and has forgotten the gift. - Albert Einstein",
+    "is_active": true
+  },
+  {
+    "category": "paragraphs",
+    "difficulty_level": "easy",
+    "content": "This is a short paragraph used for easy typing practice.",
+    "is_active": true
+  },
+  {
+    "category": "paragraphs",
+    "difficulty_level": "medium",
+    "content": "This paragraph is longer and meant to be of medium difficulty. It includes commas, conjunctions, and some capitalization.",
+    "is_active": true
+  },
+  {
+    "category": "paragraphs",
+    "difficulty_level": "hard",
+    "content": "This is a longer and more complex paragraph that includes varied punctuation, longer sentences, and a mixture of uncommon words to raise difficulty for advanced typists.",
+    "is_active": true
+  }
+]

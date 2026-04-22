@@ -11,8 +11,8 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
     const [status, setStatus] = useState('waiting'); 
     
     // --- METRICS ---
-    const [timeLeft, setTimeLeft] = useState(15);
-    const [duration] = useState(15); 
+    const [timeLeft, setTimeLeft] = useState(60);
+    const [duration, setDuration] = useState(60);
     const [wpm, setWpm] = useState(0);
     const [accuracy, setAccuracy] = useState(100);
     const [mistakes, setMistakes] = useState(0);
@@ -26,48 +26,90 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
 
     // Function na kukuha ng text sa backend nang hindi nagre-reload ang page
     const changeGameMode = async (newCategory, newDifficulty) => {
-        // I-update ang kulay ng buttons
+        // Update UI category immediately
         setActiveCategory(newCategory);
-        setActiveDifficulty(newDifficulty);
-        
-        // I-map ang pinindot sa UI papunta sa category name sa Database mo
-        let dbCategory = 'paragraphs'; // default para sa 'words' (base sa factory mo)
-        if (newCategory === 'snippet') dbCategory = 'code_snippets'; 
-        if (newCategory === 'quote') dbCategory = 'quotes'; 
+
+        // Map UI category to DB category
+        let dbCategory = 'paragraphs';
+        if (newCategory === 'snippet') dbCategory = 'code_snippets';
+        if (newCategory === 'quote') dbCategory = 'quotes';
+
+        // Helper to convert label -> int
+        const labelToInt = (label) => {
+            if (!label && label !== 0) return null;
+            const lower = String(label).toLowerCase();
+            if (lower === 'easy') return 1;
+            if (lower === 'medium') return 2;
+            if (lower === 'hard') return 3;
+            const n = parseInt(label);
+            return Number.isNaN(n) ? null : n;
+        };
 
         try {
-            // Tumawag sa API natin sa web.php gamit ang Axios
-            const response = await axios.get('/typing-texts/random', {
-                params: {
-                    category: dbCategory,
-                    difficulty_level: newDifficulty
-                },
+            // First ask the backend which difficulties exist for this category
+            const diffsResp = await axios.get('/typing-texts/difficulties', {
+                params: { category: dbCategory },
                 withCredentials: true,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'application/json'
-                }
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
             });
-            
-            // Kapag nakakuha ng text, i-update ang Typing Arena
+
+            const available = diffsResp.data?.available || [];
+            const availableInts = available.map(labelToInt).filter(Boolean);
+
+            if (availableInts.length === 0) {
+                alert('Walang available na text para sa napiling kategorya.');
+                return;
+            }
+
+            const desiredInt = labelToInt(newDifficulty) || parseInt(newDifficulty) || 2;
+
+            // If desired isn't available, pick the closest available difficulty
+            let targetDifficulty = desiredInt;
+            if (!availableInts.includes(desiredInt)) {
+                let closest = availableInts[0];
+                let minDiff = Math.abs(closest - desiredInt);
+                for (const ai of availableInts) {
+                    const d = Math.abs(ai - desiredInt);
+                    if (d < minDiff) {
+                        closest = ai;
+                        minDiff = d;
+                    }
+                }
+                targetDifficulty = closest;
+            }
+
+            // Update UI difficulty to reflect what we'll actually request
+            setActiveDifficulty(targetDifficulty);
+
+            // Map difficulty -> duration (seconds)
+            const diffToSeconds = (di) => {
+                if (di === 1) return 30;
+                if (di === 2) return 60;
+                if (di === 3) return 120;
+                return 60;
+            };
+            const durationSeconds = diffToSeconds(targetDifficulty);
+            setDuration(durationSeconds);
+
+            // Now request a random text using the chosen difficulty
+            const response = await axios.get('/typing-texts/random', {
+                params: { category: dbCategory, difficulty_level: targetDifficulty },
+                withCredentials: true,
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+            });
+
             if (response.data && response.data.data) {
                 const fetchedText = response.data.data.content;
-                
-                // I-split ang text para maging array ng words at ilagay sa state
                 setWords(fetchedText.trim().split(/\s+/));
-                
-                // I-reset ang game para handa ulit i-type
                 setTypedWords([]);
                 setCurrentInput('');
                 setStatus('waiting');
                 setMistakes(0);
-                
-                // I-reset ang timer (15 seconds default mo)
-                setTimeLeft(duration);
+                setTimeLeft(durationSeconds);
             }
         } catch (error) {
-            console.error("Error fetching text:", error);
-            alert("Walang nahanap na text para sa category at difficulty na ito. Siguraduhing may laman ang database.");
+            console.error('Error fetching text:', error);
+            alert('Walang nahanap na text para sa category at difficulty na ito. Siguraduhing may laman ang database.');
         }
     };
 
@@ -327,6 +369,20 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
             console.error('Failed to save session:', error.response?.data || error.message);
         }
     };
+        // Auto-finish when all words completed or last word fully typed without space
+        useEffect(() => {
+            if (status === 'finished') return;
+            if (words.length === 0) return;
+
+            if (typedWords.length >= words.length) {
+                handleFinish();
+                return;
+            }
+
+            if (typedWords.length === words.length - 1 && currentInput.trim() === words[words.length - 1]) {
+                handleFinish();
+            }
+        }, [typedWords, currentInput, words, status]);
     // --- LOGIC: RESTART ---
     const resetTest = () => {
         clearInterval(timerRef.current);
