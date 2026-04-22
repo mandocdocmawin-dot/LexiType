@@ -3,18 +3,16 @@ import { Head } from '@inertiajs/react';
 import Navbar from '@/Components/Navbar';
 import axios from 'axios';
 
-const sampleText = "The quick brown fox jumps over the lazy dog while the sun sets behind the jagged mountains. Precision is the bridge between intent and execution, a silent rhythm born from calculated keystrokes and the steady cadence of an undisturbed mind.";
-
 export default function Welcome({ auth, laravelVersion, phpVersion }) {
     // --- TYPING ENGINE STATES ---
-    const [words, setWords] = useState(sampleText.split(' '));
-    const [typedWords, setTypedWords] = useState([]); // Array ng mga na-type na salita
+    const [words, setWords] = useState([]);
+    const [typedWords, setTypedWords] = useState([]); 
     const [currentInput, setCurrentInput] = useState('');
-    const [status, setStatus] = useState('waiting'); // waiting, typing, finished
+    const [status, setStatus] = useState('waiting'); 
     
     // --- METRICS ---
-    const [timeLeft, setTimeLeft] = useState(15); // Default: 15 seconds
-    const [duration] = useState(15); // Para maipasa sa backend kung anong duration ang nilaro
+    const [timeLeft, setTimeLeft] = useState(15);
+    const [duration] = useState(15); 
     const [wpm, setWpm] = useState(0);
     const [accuracy, setAccuracy] = useState(100);
     const [mistakes, setMistakes] = useState(0);
@@ -23,6 +21,8 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
     // --- MGA BAGONG STATES PARA SA CONFIGURATION BAR ---
     const [activeCategory, setActiveCategory] = useState('snippet');
     const [activeDifficulty, setActiveDifficulty] = useState(2); // 1=easy, 2=normal, 3=hard
+    // Show a focus hint overlay until the user explicitly activates the typing area
+    const [showFocusHint, setShowFocusHint] = useState(true);
 
     // Function na kukuha ng text sa backend nang hindi nagre-reload ang page
     const changeGameMode = async (newCategory, newDifficulty) => {
@@ -81,25 +81,82 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
     const timerRef = useRef(null);
     const lastKeystrokeTime = useRef(Date.now());
     const isTabPressed = useRef(false);
+    // Refs to read latest state inside global event handlers
+    const wordsRef = useRef(words);
+    const typedWordsRef = useRef(typedWords);
+    const currentInputRef = useRef(currentInput);
 
-    // FIX 6: Global Typing Focus
+    useEffect(() => { wordsRef.current = words; }, [words]);
+    useEffect(() => { typedWordsRef.current = typedWords; }, [typedWords]);
+    useEffect(() => { currentInputRef.current = currentInput; }, [currentInput]);
+
+    // FIX 6: Global Typing Focus (only on explicit activation)
     useEffect(() => {
-        const handleGlobalFocus = () => {
-            if (status !== 'finished' && inputRef.current) {
+        const handleGlobalClick = () => {
+            if (status === 'finished') return;
+            if (inputRef.current) {
                 inputRef.current.focus();
+                setShowFocusHint(false);
             }
         };
 
-        // Focus immediately on mount/render
-        handleGlobalFocus();
+        const handleGlobalKeydown = (e) => {
+            if (status === 'finished') return;
+            const key = e.key;
+            // Only treat printable single-character keys as activation
+            const isPrintable = key.length === 1;
+            if (!isPrintable) return;
 
-        // Listen for global clicks and keystrokes to ensure focus is never lost
-        window.addEventListener('click', handleGlobalFocus);
-        window.addEventListener('keydown', handleGlobalFocus);
+            // If the hidden input already has focus, let its handler deal with the key
+            if (document.activeElement === inputRef.current) return;
+
+            // Otherwise, focus the input and manually process the printable character
+            if (inputRef.current) {
+                inputRef.current.focus();
+                setShowFocusHint(false);
+
+                // Start the timer if we're waiting
+                if (status === 'waiting') setTimeout(() => setStatus('typing'), 0);
+
+                // Manually append the key into the input state and update mistake tracking
+                const now = Date.now();
+                const timeToPress = now - lastKeystrokeTime.current;
+                lastKeystrokeTime.current = now;
+
+                const prevInput = currentInputRef.current || '';
+                const nextInput = prevInput + key;
+
+                const currentWordIndex = typedWordsRef.current.length;
+                const targetWord = wordsRef.current[currentWordIndex];
+
+                if (targetWord && nextInput.length > targetWord.length) {
+                    // ignore extra chars beyond limit
+                    e.preventDefault();
+                    return;
+                }
+
+                setCurrentInput((prev) => prev + key);
+
+                if (targetWord && nextInput[nextInput.length - 1] !== targetWord[nextInput.length - 1]) {
+                    setMistakes((prev) => prev + 1);
+                    setMistakeDetails((prev) => [...prev, {
+                        expected_character: targetWord[nextInput.length - 1],
+                        typed_char: key,
+                        time_to_press_ms: timeToPress
+                    }]);
+                }
+
+                // prevent default so browser doesn't try to type elsewhere
+                e.preventDefault();
+            }
+        };
+
+        window.addEventListener('click', handleGlobalClick);
+        window.addEventListener('keydown', handleGlobalKeydown);
 
         return () => {
-            window.removeEventListener('click', handleGlobalFocus);
-            window.removeEventListener('keydown', handleGlobalFocus);
+            window.removeEventListener('click', handleGlobalClick);
+            window.removeEventListener('keydown', handleGlobalKeydown);
         };
     }, [status]); // Dependency on status so we don't trap focus when 'finished'
 
@@ -135,11 +192,6 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
     const handleKeyDown = (e) => {
         if (status === 'finished') return;
 
-        // Kung mag-uumpisa pa lang, i-start ang timer
-        if (status === 'waiting') {
-            setStatus('typing');
-        }
-
         // Track when Tab is pressed and prevent default (losing focus)
         if (e.key === 'Tab') {
             e.preventDefault();
@@ -154,6 +206,13 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                 resetTest();
             }
             return;
+        }
+
+        // Start the timer only when the user types a printable character.
+        // This prevents modifier keys (Alt/Tab/Ctrl/Meta) from accidentally starting the test.
+        const isPrintable = e.key && e.key.length === 1;
+        if (status === 'waiting' && isPrintable) {
+            setStatus('typing');
         }
 
         const currentWordIndex = typedWords.length;
@@ -383,66 +442,73 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                         <div className="absolute -top-24 -left-24 w-96 h-96 bg-[#3d5afe]/5 blur-[120px] rounded-full pointer-events-none"></div>
                         
                         <div className="relative z-10 text-2xl md:text-3xl font-body leading-relaxed tracking-wide text-justify select-none flex flex-wrap gap-x-[0.3em] gap-y-2">
-                            {words.map((word, wordIdx) => {
-                                const isCurrentWord = wordIdx === typedWords.length;
-                                const isPastWord = wordIdx < typedWords.length;
-                                const typedWord = typedWords[wordIdx];
-                                
-                                return (
-                                    <span key={wordIdx} className="relative block">
-                                        {/* I-render ang bawat letra ng salita */}
-                                        {word.split('').map((char, charIdx) => {
-                                            let colorClass = "text-white/20"; // Default (Hindi pa na-type)
-                                            
-                                            // Update visual feedback colors
-                                            if (isPastWord) {
-                                                // Nakaraang salita
-                                                colorClass = (typedWord && typedWord[charIdx] === char) 
-                                                    ? "text-[#a37c58] font-bold" // Distinct highlight for correct characters
-                                                    : "text-red-500 bg-red-500/10 rounded-sm"; // Mali
-                                            } else if (isCurrentWord) {
-                                                // Kasalukuyang salita
-                                                if (charIdx < currentInput.length) {
-                                                    colorClass = currentInput[charIdx] === char 
-                                                        ? "text-[#a37c58] font-bold" // Distinct highlight for correct characters
-                                                        : "text-red-400 bg-red-400/10 rounded-sm";
-                                                }
-                                            }
+    
+                            {words.length === 0 ? (
+                                <span className="text-white/30">Loading text...</span>
+                            ) : (
+                                words.map((word, wordIdx) => {
+                                    const isCurrentWord = wordIdx === typedWords.length;
+                                    const isPastWord = wordIdx < typedWords.length;
+                                    const typedWord = typedWords[wordIdx];
+                                    
+                                    return (
+                                        <span key={wordIdx} className="relative block">
+                                            {word.split('').map((char, charIdx) => {
+                                                let colorClass = "text-white/20";
 
-                                            return (
-                                                <span key={charIdx} className={colorClass}>
-                                                    {char}
+                                                if (isPastWord) {
+                                                    colorClass = (typedWord && typedWord[charIdx] === char) 
+                                                        ? "text-[#a37c58] font-bold"
+                                                        : "text-red-500 bg-red-500/10 rounded-sm";
+                                                } else if (isCurrentWord) {
+                                                    if (charIdx < currentInput.length) {
+                                                        colorClass = currentInput[charIdx] === char 
+                                                            ? "text-[#a37c58] font-bold"
+                                                            : "text-red-400 bg-red-400/10 rounded-sm";
+                                                    }
+                                                }
+
+                                                return (
+                                                    <span key={charIdx} className={colorClass}>
+                                                        {char}
+                                                    </span>
+                                                );
+                                            })}
+
+                                            {isCurrentWord && currentInput.length > word.length && (
+                                                <span className="text-red-500 bg-red-500/20 rounded-sm opacity-80">
+                                                    {currentInput.slice(word.length)}
                                                 </span>
-                                            );
-                                        })}
-                                        
-                                        {/* Extra na mga maling letra na tinype na wala sa original word */}
-                                        {isCurrentWord && currentInput.length > word.length && (
-                                            <span className="text-red-500 bg-red-500/20 rounded-sm opacity-80">
-                                                {currentInput.slice(word.length)}
-                                            </span>
-                                        )}
-                                        
-                                        {/* Caret (Blinking cursor) */}
-                                        {isCurrentWord && status !== 'finished' && (
-                                            <span 
-                                                className="absolute bottom-1 -translate-x-0.5 caret-custom"
-                                                style={{ left: `${Math.min(currentInput.length, word.length) * 0.6}em` }} // Approximation lang ito ng position
-                                            ></span>
-                                        )}
-                                    </span>
-                                );
-                            })}
+                                            )}
+
+                                            {isCurrentWord && status !== 'finished' && (
+                                                <span 
+                                                    className="absolute bottom-1 -translate-x-0.5 caret-custom"
+                                                    style={{ left: `${Math.min(currentInput.length, word.length) * 0.6}em` }}
+                                                ></span>
+                                            )}
+                                        </span>
+                                    );
+                                })
+                            )}
+
                         </div>
                         
                         {/* Focus Hidden Input */}
-                        <input 
+                        {showFocusHint && status !== 'typing' && (
+                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                                <div className="bg-[#0b1326]/80 text-white/70 px-4 py-2 rounded-md text-sm font-mono">Click here or press any key to focus</div>
+                            </div>
+                        )}
+
+                        <input
                             ref={inputRef}
-                            autoFocus 
-                            className="absolute inset-0 opacity-0 cursor-default" 
-                            type="text" 
+                            className="absolute inset-0 opacity-0 cursor-default"
+                            type="text"
                             onKeyDown={handleKeyDown}
-                            onKeyUp={handleKeyUp} 
+                            onKeyUp={handleKeyUp}
+                            onFocus={() => setShowFocusHint(false)}
+                            onBlur={() => { if (status !== 'typing') setShowFocusHint(true); }}
                             disabled={status === 'finished'}
                         />
                     </div>

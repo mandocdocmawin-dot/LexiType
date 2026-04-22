@@ -3,42 +3,55 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\SystemTypingText;
+use App\Models\TypingSession;
+use App\Models\keystrokeMistake;
 
-class SystemTypingTextController extends Controller
+class TypingSessionController extends Controller
 {
     /**
-     * Kumuha ng isang random na text base sa category at difficulty.
+     * Store a typing session and optional keystroke mistakes from the client.
      */
-    public function getRandomText(Request $request)
+    public function store(Request $request)
     {
         $validated = $request->validate([
-            'category' => 'required|string',
-            'difficulty_level' => 'required|integer', // 1, 2, o 3 mula sa React
+            'wpm_score' => 'required|integer',
+            'accuracy_percentage' => 'required|integer',
+            'duration_seconds' => 'required|integer',
+            'difficulty_played' => 'required|string',
+            'mistakes' => 'nullable|array',
+            'mistakes.*.expected_character' => 'required_with:mistakes|string',
+            'mistakes.*.typed_char' => 'required_with:mistakes|string',
+            'mistakes.*.time_to_press_ms' => 'required_with:mistakes',
         ]);
 
-        // FIX 3: I-translate ang Number to String para mag-match sa Database
-        $difficultyMap = [
-            1 => 'easy',
-            2 => 'medium',
-            3 => 'hard'
-        ];
-        $dbDifficulty = $difficultyMap[$validated['difficulty_level']];
+        $user = $request->user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
 
-        // Hanapin ang text gamit ang na-translate na difficulty
-        $text = SystemTypingText::where('category', $validated['category'])
-            ->where('difficulty_level', $dbDifficulty) 
-            ->where('is_active', true)
-            ->inRandomOrder()
-            ->first();
+        $typingSession = TypingSession::create([
+            'user_id' => $user->id,
+            'wpm_score' => $validated['wpm_score'],
+            'accuracy_percentage' => $validated['accuracy_percentage'],
+            'duration_seconds' => $validated['duration_seconds'],
+            'difficulty_played' => $validated['difficulty_played'],
+        ]);
 
-        if (!$text) {
-            return response()->json(['message' => 'Walang nahanap na text para sa kategoryang ito.'], 404);
+        // Save keystroke mistakes if provided
+        if (!empty($validated['mistakes']) && is_array($validated['mistakes'])) {
+            foreach ($validated['mistakes'] as $m) {
+                // Normalize fields to strings to match migration types
+                $typingSession->keystrokeMistakes()->create([
+                    'expected_character' => (string) ($m['expected_character'] ?? ''),
+                    'typed_char' => (string) ($m['typed_char'] ?? ''),
+                    'time_to_press_ms' => (string) ($m['time_to_press_ms'] ?? ''),
+                ]);
+            }
         }
 
         return response()->json([
-            'message' => 'Success',
-            'data' => $text
-        ], 200);
+            'message' => 'Session saved',
+            'data' => $typingSession->load('keystrokeMistakes'),
+        ], 201);
     }
 }
