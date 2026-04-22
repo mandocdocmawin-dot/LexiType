@@ -8,19 +8,18 @@ use App\Models\SystemTypingText;
 class SystemTypingTextController extends Controller
 {
     /**
-     * Kumuha ng isang random na text base sa category at difficulty.
+     * Get a random text based on category and difficulty.
      */
     public function getRandomText(Request $request)
     {
         $validated = $request->validate([
             'category' => 'required|string',
-            'difficulty_level' => 'required', // accept numeric (1/2/3) or text (easy/medium/hard)
+            'difficulty_level' => 'required',
         ]);
 
         $category = $validated['category'];
         $difficulty = $validated['difficulty_level'];
 
-        // Normalize difficulty: accept either numeric (1,2,3) or strings ('easy','medium','hard').
         $map = [1 => 'easy', 2 => 'medium', 3 => 'hard'];
         $diffText = null;
         if (is_numeric($difficulty)) {
@@ -33,7 +32,6 @@ class SystemTypingTextController extends Controller
             }
         }
 
-        // Try to find exact matches first (accept both numeric and text forms)
         $text = SystemTypingText::where('category', $category)
             ->where('is_active', true)
             ->where(function ($q) use ($difficulty, $diffText) {
@@ -55,7 +53,6 @@ class SystemTypingTextController extends Controller
             ], 200);
         }
 
-        // If not found, get available difficulties for the category
         $available = SystemTypingText::where('category', $category)
             ->where('is_active', true)
             ->pluck('difficulty_level')
@@ -64,22 +61,19 @@ class SystemTypingTextController extends Controller
             ->toArray();
 
         if (empty($available)) {
-            return response()->json(['message' => 'Walang nahanap na text para sa kategoryang ito.'], 404);
+            return response()->json(['message' => 'No available text found for the specified category.'], 404);
         }
 
-        // Try to pick the closest difficulty (if possible) else pick a random available
         $desiredInt = $this->difficultyToInt($difficulty);
         $availableMap = [];
         foreach ($available as $a) {
             $ai = $this->difficultyToInt($a);
             if ($ai !== null) {
-                // store original value so we can query the exact stored format
                 $availableMap[$ai] = $a;
             }
         }
 
         if (!empty($availableMap) && $desiredInt !== null) {
-            // find closest integer key
             $closest = null;
             foreach (array_keys($availableMap) as $ai) {
                 if ($closest === null) {
@@ -92,7 +86,6 @@ class SystemTypingTextController extends Controller
             }
             $chosenDifficultyValue = $availableMap[$closest];
         } else {
-            // fallback: choose random from available (keep the original stored value)
             $chosenDifficultyValue = $available[array_rand($available)];
         }
 
@@ -103,14 +96,13 @@ class SystemTypingTextController extends Controller
             ->first();
 
         if (!$text) {
-            // as a last resort, return any text in the category
             $text = SystemTypingText::where('category', $category)
                 ->where('is_active', true)
                 ->inRandomOrder()
                 ->first();
 
             if (!$text) {
-                return response()->json(['message' => 'Walang nahanap na text para sa kategoryang ito.'], 404);
+                return response()->json(['message' => 'No available text found for the specified category.'], 404);
             }
             return response()->json([
                 'message' => 'Success (fallback to any)',
@@ -131,8 +123,7 @@ class SystemTypingTextController extends Controller
     }
 
     /**
-     * Return all active texts for a given category and difficulty (ordered by id).
-     * This is used by the frontend to allow cycling through a known list of texts.
+     * Return all active texts for a given category and difficulty.
      */
     public function getTextsList(Request $request)
     {
@@ -144,7 +135,6 @@ class SystemTypingTextController extends Controller
         $category = $validated['category'];
         $difficulty = $validated['difficulty_level'];
 
-        // Normalize difficulty: accept either numeric (1,2,3) or strings ('easy','medium','hard').
         $map = [1 => 'easy', 2 => 'medium', 3 => 'hard'];
         $diffText = null;
         if (is_numeric($difficulty)) {
@@ -175,7 +165,7 @@ class SystemTypingTextController extends Controller
     }
 
     /**
-     * Returns list of available difficulty levels for a category (normalized to 'easy','medium','hard')
+     * Returns a list of available difficulty levels for a category.
      */
     public function getAvailableDifficulties(Request $request)
     {
@@ -191,7 +181,7 @@ class SystemTypingTextController extends Controller
             ->toArray();
 
         if (empty($available)) {
-            return response()->json(['message' => 'Walang available na difficulty para sa kategoryang ito.', 'available' => []], 200);
+            return response()->json(['message' => 'No available difficulties found for the specified category.', 'available' => []], 200);
         }
 
         $normalized = [];
@@ -200,12 +190,10 @@ class SystemTypingTextController extends Controller
             if ($ai !== null) {
                 $normalized[$ai] = $this->intToLabel($ai);
             } else {
-                // unknown format; include as-is
                 $normalized[$a] = $a;
             }
         }
 
-        // Return as ordered by integer keys if possible
         ksort($normalized, SORT_NUMERIC);
 
         return response()->json([
@@ -214,6 +202,9 @@ class SystemTypingTextController extends Controller
         ], 200);
     }
 
+    /**
+     * Convert difficulty string or number to an integer representation.
+     */
     private function difficultyToInt($d)
     {
         if (is_numeric($d)) {
@@ -226,6 +217,9 @@ class SystemTypingTextController extends Controller
         return $map[$lower] ?? null;
     }
 
+    /**
+     * Convert integer difficulty to its string label.
+     */
     private function intToLabel($i)
     {
         $map = [1 => 'easy', 2 => 'medium', 3 => 'hard'];

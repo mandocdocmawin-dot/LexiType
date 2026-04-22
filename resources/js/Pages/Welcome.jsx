@@ -18,18 +18,15 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
     const [mistakes, setMistakes] = useState(0);
     const [mistakeDetails, setMistakeDetails] = useState([]);
 
-    // --- MGA BAGONG STATES PARA SA CONFIGURATION BAR ---
+    // --- NEW STATES FOR CONFIGURATION BAR ---
     const [activeCategory, setActiveCategory] = useState('snippet');
-    const [activeDifficulty, setActiveDifficulty] = useState(2); // 1=easy, 2=normal, 3=hard
-    // Show a focus hint overlay until the user explicitly activates the typing area
+    const [activeDifficulty, setActiveDifficulty] = useState(2); 
     const [showFocusHint, setShowFocusHint] = useState(true);
 
-    // Function na kukuha ng text sa backend nang hindi nagre-reload ang page
+    // Function to fetch text from the backend without reloading the page
     const changeGameMode = async (newCategory, newDifficulty) => {
-        // Update UI category immediately
         setActiveCategory(newCategory);
 
-        // Map UI category to DB category
         let dbCategory = 'paragraphs';
         if (newCategory === 'snippet') dbCategory = 'code_snippets';
         if (newCategory === 'quote') dbCategory = 'quotes';
@@ -124,7 +121,6 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
 
     // Cycle to the next text for (category, difficulty). Loops back to first when at the end.
     const cycleGameMode = async (newCategory, newDifficulty) => {
-        // Update UI category immediately
         setActiveCategory(newCategory);
 
         const dbCategory = uiToDbCategory(newCategory);
@@ -162,7 +158,6 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
         // Update cache index
         setTextsCache(prev => ({ ...prev, [key]: { list: cache.list, index: nextIndex } }));
 
-        // Map difficulty -> duration (seconds)
         const diffToSeconds = (di) => {
             if (di === 1) return 30;
             if (di === 2) return 60;
@@ -186,17 +181,16 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
         }
     };
 
-    // Awtomatikong kumuha ng text pagka-load ng page
+    // Automatically fetch text on page load
     useEffect(() => {
         changeGameMode('snippet', 2);
     }, []);
 
-    // --- REFS ---
     const inputRef = useRef(null);
     const timerRef = useRef(null);
     const lastKeystrokeTime = useRef(Date.now());
     const isTabPressed = useRef(false);
-    // Refs to read latest state inside global event handlers
+    
     const wordsRef = useRef(words);
     const typedWordsRef = useRef(typedWords);
     const currentInputRef = useRef(currentInput);
@@ -205,7 +199,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
     useEffect(() => { typedWordsRef.current = typedWords; }, [typedWords]);
     useEffect(() => { currentInputRef.current = currentInput; }, [currentInput]);
 
-    // FIX 6: Global Typing Focus (only on explicit activation)
+    // Global Typing Focus (only on explicit activation)
     useEffect(() => {
         const handleGlobalClick = () => {
             if (status === 'finished') return;
@@ -218,7 +212,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
         const handleGlobalKeydown = (e) => {
             if (status === 'finished') return;
             const key = e.key;
-            // Only treat printable single-character keys as activation
+            
             const isPrintable = key.length === 1;
             if (!isPrintable) return;
 
@@ -245,7 +239,6 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                 const targetWord = wordsRef.current[currentWordIndex];
 
                 if (targetWord && nextInput.length > targetWord.length) {
-                    // ignore extra chars beyond limit
                     e.preventDefault();
                     return;
                 }
@@ -261,7 +254,6 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                     }]);
                 }
 
-                // prevent default so browser doesn't try to type elsewhere
                 e.preventDefault();
             }
         };
@@ -273,7 +265,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
             window.removeEventListener('click', handleGlobalClick);
             window.removeEventListener('keydown', handleGlobalKeydown);
         };
-    }, [status]); // Dependency on status so we don't trap focus when 'finished'
+    }, [status]); 
 
     // --- LOGIC: START TIMER ---
     useEffect(() => {
@@ -316,7 +308,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
 
         // Check if Enter is pressed WHILE Tab is held down
         if (e.key === 'Enter') {
-            e.preventDefault(); // Prevent accidental form submissions/scrolling
+            e.preventDefault(); 
             if (isTabPressed.current) {
                 resetTest();
             }
@@ -333,11 +325,11 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
         const currentWordIndex = typedWords.length;
         const targetWord = words[currentWordIndex];
 
-        // Kapag pinindot ang Space, lumipat sa susunod na salita
+        // Move to the next word when Space is pressed
         if (e.key === ' ') {
-            e.preventDefault(); // Iwasan mag-scroll
+            e.preventDefault(); 
             if (currentInput.trim().length > 0) {
-                // I-check kung may mali sa buong salita bago lumipat
+                // Check for mistakes in the entire word before moving on
                 if (currentInput.trim() !== targetWord) {
                      setMistakes((prev) => prev + Math.abs(targetWord.length - currentInput.trim().length));
                 }
@@ -348,11 +340,8 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
         // Enhanced Backspace Logic
         else if (e.key === 'Backspace') {
             if (currentInput.length > 0) {
-                // If there's text in the current word, just delete the last character
                 setCurrentInput(currentInput.slice(0, -1));
             } 
-            // FIX 5: Lock Correct Words
-            // Only allow backspacing to the previous word if it was typed incorrectly
             else if (typedWords.length > 0) {
                 const prevIndex = typedWords.length - 1;
                 const previousTypedWord = typedWords[prevIndex];
@@ -364,12 +353,12 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                 }
             }
         } 
-        // Kapag regular na letra, idagdag sa input at i-check kung mali agad
+        // If it's a regular letter, add to input and check immediately for mistakes
         else if (e.key.length === 1) {
-            // Kunin ang oras na lumipas bago pinindot itong key
+            // Get the elapsed time before this key was pressed
             const now = Date.now();
             const timeToPress = now - lastKeystrokeTime.current;
-            lastKeystrokeTime.current = now; // i-update ang ref para sa susunod na pindot
+            lastKeystrokeTime.current = now; 
 
             // Limit extra characters to targetWord.length + 5
             if (targetWord && currentInput.length >= targetWord.length + 0) {
@@ -382,9 +371,9 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
             
             // Real-time mistake tracking
             if (targetWord && nextInput[nextInput.length - 1] !== targetWord[nextInput.length - 1]) {
-                setMistakes((prev) => prev + 1); // For WPM math
+                setMistakes((prev) => prev + 1); 
                 
-                // BAGONG LOGIC: I-record ang buong detalye ng pagkakamali
+                // NEW LOGIC: Record full details of the mistake
                 setMistakeDetails((prev) => [...prev, {
                     expected_character: targetWord[nextInput.length - 1],
                     typed_char: e.key,
@@ -411,17 +400,16 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
     const handleFinish = async () => {
         clearInterval(timerRef.current);
         setStatus('finished');
-        
-        // I-compute ang final stats
+
         const finalWpm = wpm; 
         const finalAccuracy = accuracy; 
 
-        // [BAGONG LOGIC]: I-check kung Guest. Kapag Guest, walang console.log, tahimik lang na ihihinto ang save.
+        // [NEW LOGIC]: Check if Guest. If Guest, silently stop the save process.
         if (!auth.user) {
             return; 
         }
 
-        // Kung umabot dito, ibig sabihin may naka-login na user. I-save na natin!
+        // If it reaches here, it means a user is logged in. Let's save it!
         try {
             // Normalize difficulty label to backend convention: 'easy'|'medium'|'hard'
             const difficultyLabel = activeDifficulty === 1 ? 'easy' : (activeDifficulty === 3 ? 'hard' : 'medium');
@@ -439,21 +427,19 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                     'Accept': 'application/json'
                 }
             });
-            // Pwede mo ring tanggalin ang console.log na ito kung gusto mong sobrang linis ng console
-            // console.log('Session saved successfully sa Backend!', response.data);
         } catch (error) {
             console.error('Failed to save session:', error.response?.data || error.message);
         }
     };
-        // Auto-finish when all words completed or last word fully typed without space
-        useEffect(() => {
-            if (status === 'finished') return;
-            if (words.length === 0) return;
 
-            if (typedWords.length >= words.length) {
-                handleFinish();
-                return;
-            }
+    useEffect(() => {
+        if (status === 'finished') return;
+        if (words.length === 0) return;
+
+        if (typedWords.length >= words.length) {
+            handleFinish();
+            return;
+        }
 
             if (typedWords.length === words.length - 1 && currentInput.trim() === words[words.length - 1]) {
                 handleFinish();
@@ -469,9 +455,9 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
         setWpm(0);
         setAccuracy(100);
         setMistakes(0);
-        setMistakeDetails([]); // I-clear ang listahan ng mistakes
-        lastKeystrokeTime.current = Date.now(); // I-reset ang time tracker
-        isTabPressed.current = false; // Reset the shortcut state just in case
+        setMistakeDetails([]); // Clear the list of mistakes
+        lastKeystrokeTime.current = Date.now(); // Reset the time tracker
+        isTabPressed.current = false; 
         if (inputRef.current) inputRef.current.focus();
     };
 
@@ -490,7 +476,6 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                 />
             </Head>
 
-            {/* Custom Styles Injection */}
             <style dangerouslySetInnerHTML={{
                 __html: `
                     .material-symbols-outlined {
@@ -498,28 +483,25 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                     }
                     .caret-custom {
                         width: 2px;
-                        height: 1.5rem;
+                        height: 1em;
                         background-color: #bbc3ff;
                         box-shadow: 0 0 8px #3d5afe;
                         display: inline-block;
                         vertical-align: middle;
+                        transform: translateY(-0.12em);
                     }
                 `
             }} />
 
-            {/* Main Application Wrapper */}
             <div className="min-h-screen bg-[#0b1326] text-[#dae2fd] font-body selection:bg-primary-container selection:text-on-primary-container overflow-x-hidden relative dark">
                 
-                {/* Extracted Navbar Component with auth prop passed down */}
                 <Navbar auth={auth} />
 
                 <main className="min-h-screen flex flex-col justify-center items-center px-6 pt-20">
                     
-                    {/* FIX 7: Distraction-Free Mode applied to Configuration Bar */}
                     <div className={`mb-12 flex justify-center transition-opacity duration-500 ${status === 'typing' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
                         <div className="flex items-center gap-8 bg-[#131b2e]/50 px-8 py-3 rounded-full border border-[#444656]/20 shadow-sm">
                             
-                            {/* Mode Select */}
                             <div className="flex items-center gap-4">
                                 <button 
                                     onClick={() => changeGameMode('snippet', activeDifficulty)}
@@ -540,7 +522,6 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                             
                             <div className="w-px h-4 bg-[#444656]/50"></div>
                             
-                            {/* Difficulty */}
                             <div className="flex items-center gap-4">
                                 <button 
                                     onClick={() => cycleGameMode(activeCategory, 1)}
@@ -561,16 +542,13 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                         </div>
                     </div>
 
-                    {/* Typing Arena */}
                     <div 
                         className="relative w-full max-w-5xl bg-[#060e20] rounded-2xl p-8 md:p-12 overflow-hidden group cursor-text"
                     >
-                        {/* Timer Display */}
                         <div className="absolute top-4 right-8 font-headline text-2xl font-bold text-[#3d5afe] opacity-50">
                             {timeLeft}s
                         </div>
 
-                        {/* Asymmetric background glow */}
                         <div className="absolute -top-24 -left-24 w-96 h-96 bg-[#3d5afe]/5 blur-[120px] rounded-full pointer-events-none"></div>
                         
                         <div className="relative z-10 text-2xl md:text-3xl font-body leading-relaxed tracking-wide text-justify select-none flex flex-wrap gap-x-[0.3em] gap-y-2">
@@ -584,26 +562,35 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                                     const typedWord = typedWords[wordIdx];
                                     
                                     return (
-                                        <span key={wordIdx} className="relative block">
+                                        <span key={wordIdx} className="relative inline-block">
+                                            {/* caret before first char */}
+                                            {isCurrentWord && status !== 'finished' && currentInput.length === 0 && (
+                                                <span className="caret-custom inline-block align-middle" aria-hidden="true"></span>
+                                            )}
+
                                             {word.split('').map((char, charIdx) => {
                                                 let colorClass = "text-white/20";
 
                                                 if (isPastWord) {
                                                     colorClass = (typedWord && typedWord[charIdx] === char) 
-                                                        ? "text-[#a37c58] font-bold"
+                                                        ? "text-[#a37c58]"
                                                         : "text-red-500 bg-red-500/10 rounded-sm";
                                                 } else if (isCurrentWord) {
                                                     if (charIdx < currentInput.length) {
                                                         colorClass = currentInput[charIdx] === char 
-                                                            ? "text-[#a37c58] font-bold"
+                                                            ? "text-[#a37c58]"
                                                             : "text-red-400 bg-red-400/10 rounded-sm";
                                                     }
                                                 }
 
                                                 return (
-                                                    <span key={charIdx} className={colorClass}>
-                                                        {char}
-                                                    </span>
+                                                    <React.Fragment key={charIdx}>
+                                                        <span className={colorClass}>{char}</span>
+                                                        {/* caret inserted after the character at the current index */}
+                                                        {isCurrentWord && status !== 'finished' && charIdx === currentInput.length - 1 && (
+                                                            <span className="caret-custom inline-block align-middle" aria-hidden="true"></span>
+                                                        )}
+                                                    </React.Fragment>
                                                 );
                                             })}
 
@@ -612,13 +599,6 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                                                     {currentInput.slice(word.length)}
                                                 </span>
                                             )}
-
-                                            {isCurrentWord && status !== 'finished' && (
-                                                <span 
-                                                    className="absolute bottom-1 -translate-x-0.5 caret-custom"
-                                                    style={{ left: `${Math.min(currentInput.length, word.length) * 0.6}em` }}
-                                                ></span>
-                                            )}
                                         </span>
                                     );
                                 })
@@ -626,7 +606,6 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
 
                         </div>
                         
-                        {/* Focus Hidden Input */}
                         {showFocusHint && status !== 'typing' && (
                             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
                                 <div className="bg-[#0b1326]/80 text-white/70 px-4 py-2 rounded-md text-sm font-mono">Click here or press any key to focus</div>
@@ -645,7 +624,6 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                         />
                     </div>
 
-                    {/* FIX 7: Distraction-Free Mode applied to Footer Hint */}
                     <div className={`mt-12 flex items-center justify-center gap-3 text-[#64748b] font-medium transition-opacity duration-500 ${status === 'typing' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
                         <span className="px-3 py-1.5 bg-[#1e293b] rounded-md text-xs font-semibold text-[#94a3b8]">tab</span>
                         <span className="text-xs font-semibold">+</span>
@@ -653,7 +631,6 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                         <span className="text-[13px] ml-2">to restart session</span>
                     </div>
 
-                    {/* Post-Test State */}
                     {status === 'finished' && (
                         <div className="fixed inset-0 z-50 bg-[#0b1326]/95 backdrop-blur-xl flex flex-col items-center justify-center p-8">
                             <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
@@ -700,7 +677,6 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                     )}
                 </main>
 
-                {/* FIX 7: Distraction-Free Mode applied to SideNavBar / AI Coach Widget */}
                 <div className={`fixed bottom-8 right-8 z-50 group transition-opacity duration-500 ${status === 'typing' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
                     <div className="absolute bottom-full right-0 mb-4 w-64 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 pointer-events-none">
                         <div className="bg-[#131b2e]/90 backdrop-blur-xl p-4 rounded-xl shadow-[0px_20px_40px_rgba(6,14,32,0.4)] border border-white/10">
@@ -717,7 +693,6 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                     </div>
                 </div>
 
-                {/* FIX 7: Distraction-Free Mode applied to Outputting framework versions dynamically */}
                 <div className={`fixed bottom-4 left-4 text-xs font-body text-white/30 transition-opacity duration-500 ${status === 'typing' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
                     Laravel v{laravelVersion} | PHP v{phpVersion}
                 </div>
