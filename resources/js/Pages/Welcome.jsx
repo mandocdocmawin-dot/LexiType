@@ -350,11 +350,14 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
 
         // Kung umabot dito, ibig sabihin may naka-login na user. I-save na natin!
         try {
+            // Normalize difficulty label to backend convention: 'easy'|'medium'|'hard'
+            const difficultyLabel = activeDifficulty === 1 ? 'easy' : (activeDifficulty === 3 ? 'hard' : 'medium');
+
             const response = await axios.post('/typing-sessions', {
-                wpm_score: finalWpm, 
+                wpm_score: finalWpm,
                 accuracy_percentage: finalAccuracy,
                 duration_seconds: duration,
-                difficulty_played: 'normal',
+                difficulty_played: difficultyLabel,
                 mistakes: mistakeDetails,
             }, {
                 withCredentials: true,
