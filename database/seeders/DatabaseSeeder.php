@@ -4,7 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\SystemTypingText;
 use App\Models\User;
-use App\Models\keystrokeMistake; // Siguraduhing naka-import ito
+use App\Models\keystrokeMistake; 
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -30,8 +30,8 @@ class DatabaseSeeder extends Seeder
         //     ->hasAiRecommendations(2)   // Gagawa ng 2 AIRecommendations
         //     ->create();
 
-        // // 3. System Typing Texts (Standalone, naayos na natin ang user_id sa factory nito)
-        // SystemTypingText::factory(5)->create();
+        // 3. System Typing Texts (Standalone, naayos na natin ang user_id sa factory nito)
+        SystemTypingText::factory(5)->create();
 
         // // 4. Keystroke Mistakes 
         // // (Pansamantala lang: Gagawa ng 10 random mistakes)

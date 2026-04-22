@@ -16,8 +16,8 @@ return new class extends Migration
             $table->foreignUuid('user_id')->constrained()->onDelete('cascade');
             $table->text('category');
             $table->text('content');
-            $table->integer('difficulty_level'); // 1 for Easy, 2 for Medium, 3 for Hard
-            $table->boolean('is_active');
+            $table->string('difficulty_level'); // 1 for Easy, 2 for Medium, 3 for Hard
+            $table->boolean('is_active')->default(true);
             $table->timestamps();
         });
     }

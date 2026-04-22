@@ -18,16 +18,71 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
     const [wpm, setWpm] = useState(0);
     const [accuracy, setAccuracy] = useState(100);
     const [mistakes, setMistakes] = useState(0);
+    const [mistakeDetails, setMistakeDetails] = useState([]);
+
+    // --- MGA BAGONG STATES PARA SA CONFIGURATION BAR ---
+    const [activeCategory, setActiveCategory] = useState('snippet');
+    const [activeDifficulty, setActiveDifficulty] = useState(2); // 1=easy, 2=normal, 3=hard
+
+    // Function na kukuha ng text sa backend nang hindi nagre-reload ang page
+    const changeGameMode = async (newCategory, newDifficulty) => {
+        // I-update ang kulay ng buttons
+        setActiveCategory(newCategory);
+        setActiveDifficulty(newDifficulty);
+        
+        // I-map ang pinindot sa UI papunta sa category name sa Database mo
+        let dbCategory = 'paragraphs'; // default para sa 'words' (base sa factory mo)
+        if (newCategory === 'snippet') dbCategory = 'code_snippets'; 
+        if (newCategory === 'quote') dbCategory = 'quotes'; 
+
+        try {
+            // Tumawag sa API natin sa web.php gamit ang Axios
+            const response = await axios.get('/typing-texts/random', {
+                params: {
+                    category: dbCategory,
+                    difficulty_level: newDifficulty
+                },
+                withCredentials: true,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            });
+            
+            // Kapag nakakuha ng text, i-update ang Typing Arena
+            if (response.data && response.data.data) {
+                const fetchedText = response.data.data.content;
+                
+                // I-split ang text para maging array ng words at ilagay sa state
+                setWords(fetchedText.trim().split(/\s+/));
+                
+                // I-reset ang game para handa ulit i-type
+                setTypedWords([]);
+                setCurrentInput('');
+                setStatus('waiting');
+                setMistakes(0);
+                
+                // I-reset ang timer (15 seconds default mo)
+                setTimeLeft(duration);
+            }
+        } catch (error) {
+            console.error("Error fetching text:", error);
+            alert("Walang nahanap na text para sa category at difficulty na ito. Siguraduhing may laman ang database.");
+        }
+    };
+
+    // Awtomatikong kumuha ng text pagka-load ng page
+    useEffect(() => {
+        changeGameMode('snippet', 2);
+    }, []);
 
     // --- REFS ---
     const inputRef = useRef(null);
     const timerRef = useRef(null);
-    
+    const lastKeystrokeTime = useRef(Date.now());
     const isTabPressed = useRef(false);
 
     // FIX 6: Global Typing Focus
-    // Forces focus on the hidden input when the component mounts, and re-applies focus
-    // if the user clicks anywhere on the screen or presses any key.
     useEffect(() => {
         const handleGlobalFocus = () => {
             if (status !== 'finished' && inputRef.current) {
@@ -137,19 +192,30 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
         } 
         // Kapag regular na letra, idagdag sa input at i-check kung mali agad
         else if (e.key.length === 1) {
-            
+            // Kunin ang oras na lumipas bago pinindot itong key
+            const now = Date.now();
+            const timeToPress = now - lastKeystrokeTime.current;
+            lastKeystrokeTime.current = now; // i-update ang ref para sa susunod na pindot
+
             // Limit extra characters to targetWord.length + 5
             if (targetWord && currentInput.length >= targetWord.length + 0) {
                 e.preventDefault();
-                return; // Stop execution here, preventing new characters from being added
+                return;
             }
 
             const nextInput = currentInput + e.key;
             setCurrentInput(nextInput);
             
-            // Real-time mistake tracking (kung ang tinype ay hindi match sa target)
+            // Real-time mistake tracking
             if (targetWord && nextInput[nextInput.length - 1] !== targetWord[nextInput.length - 1]) {
-                setMistakes((prev) => prev + 1);
+                setMistakes((prev) => prev + 1); // For WPM math
+                
+                // BAGONG LOGIC: I-record ang buong detalye ng pagkakamali
+                setMistakeDetails((prev) => [...prev, {
+                    expected_character: targetWord[nextInput.length - 1],
+                    typed_char: e.key,
+                    time_to_press_ms: timeToPress
+                }]);
             }
         }
     };
@@ -188,6 +254,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                 accuracy_percentage: finalAccuracy,
                 duration_seconds: duration,
                 difficulty_played: 'normal',
+                mistakes: mistakeDetails,
             }, {
                 withCredentials: true,
                 headers: {
@@ -211,6 +278,8 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
         setWpm(0);
         setAccuracy(100);
         setMistakes(0);
+        setMistakeDetails([]); // I-clear ang listahan ng mistakes
+        lastKeystrokeTime.current = Date.now(); // I-reset ang time tracker
         isTabPressed.current = false; // Reset the shortcut state just in case
         if (inputRef.current) inputRef.current.focus();
     };
@@ -258,20 +327,45 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                     {/* FIX 7: Distraction-Free Mode applied to Configuration Bar */}
                     <div className={`mb-12 flex justify-center transition-opacity duration-500 ${status === 'typing' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
                         <div className="flex items-center gap-8 bg-[#131b2e]/50 px-8 py-3 rounded-full border border-[#444656]/20 shadow-sm">
+                            
                             {/* Mode Select */}
                             <div className="flex items-center gap-4">
-                                <button className="text-xs font-headline font-bold tracking-widest text-[#bbc3ff] transition-colors hover:text-[#dae2fd]">snippet</button>
-                                <button className="text-xs font-headline font-bold tracking-widest text-[#8e8fa2] transition-colors hover:text-[#dae2fd]">words</button>
-                                <button className="text-xs font-headline font-bold tracking-widest text-[#8e8fa2] transition-colors hover:text-[#dae2fd]">quote</button>
+                                <button 
+                                    onClick={() => changeGameMode('snippet', activeDifficulty)}
+                                    className={`text-xs font-headline font-bold tracking-widest transition-colors hover:text-[#dae2fd] ${activeCategory === 'snippet' ? 'text-[#bbc3ff]' : 'text-[#8e8fa2]'}`}>
+                                    snippet
+                                </button>
+                                <button 
+                                    onClick={() => changeGameMode('words', activeDifficulty)}
+                                    className={`text-xs font-headline font-bold tracking-widest transition-colors hover:text-[#dae2fd] ${activeCategory === 'words' ? 'text-[#bbc3ff]' : 'text-[#8e8fa2]'}`}>
+                                    words
+                                </button>
+                                <button 
+                                    onClick={() => changeGameMode('quote', activeDifficulty)}
+                                    className={`text-xs font-headline font-bold tracking-widest transition-colors hover:text-[#dae2fd] ${activeCategory === 'quote' ? 'text-[#bbc3ff]' : 'text-[#8e8fa2]'}`}>
+                                    quote
+                                </button>
                             </div>
                             
                             <div className="w-px h-4 bg-[#444656]/50"></div>
                             
                             {/* Difficulty */}
                             <div className="flex items-center gap-4">
-                                <button className="text-xs font-headline font-bold tracking-widest text-[#8e8fa2] transition-colors hover:text-[#dae2fd]">easy</button>
-                                <button className="text-xs font-headline font-bold tracking-widest text-[#bbc3ff] transition-colors hover:text-[#dae2fd]">normal</button>
-                                <button className="text-xs font-headline font-bold tracking-widest text-[#8e8fa2] transition-colors hover:text-[#dae2fd]">hard</button>
+                                <button 
+                                    onClick={() => changeGameMode(activeCategory, 1)}
+                                    className={`text-xs font-headline font-bold tracking-widest transition-colors hover:text-[#dae2fd] ${activeDifficulty === 1 ? 'text-[#bbc3ff]' : 'text-[#8e8fa2]'}`}>
+                                    easy
+                                </button>
+                                <button 
+                                    onClick={() => changeGameMode(activeCategory, 2)}
+                                    className={`text-xs font-headline font-bold tracking-widest transition-colors hover:text-[#dae2fd] ${activeDifficulty === 2 ? 'text-[#bbc3ff]' : 'text-[#8e8fa2]'}`}>
+                                    normal
+                                </button>
+                                <button 
+                                    onClick={() => changeGameMode(activeCategory, 3)}
+                                    className={`text-xs font-headline font-bold tracking-widest transition-colors hover:text-[#dae2fd] ${activeDifficulty === 3 ? 'text-[#bbc3ff]' : 'text-[#8e8fa2]'}`}>
+                                    hard
+                                </button>
                             </div>
                         </div>
                     </div>

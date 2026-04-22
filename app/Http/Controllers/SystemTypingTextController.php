@@ -14,20 +14,12 @@ class SystemTypingTextController extends Controller
     {
         $validated = $request->validate([
             'category' => 'required|string',
-            'difficulty_level' => 'required|integer', // 1, 2, o 3 mula sa React
+            'difficulty_level' => 'required|integer', // 1, 2, o 3
         ]);
 
-        // FIX 3: I-translate ang Number to String para mag-match sa Database
-        $difficultyMap = [
-            1 => 'easy',
-            2 => 'medium',
-            3 => 'hard'
-        ];
-        $dbDifficulty = $difficultyMap[$validated['difficulty_level']];
-
-        // Hanapin ang text gamit ang na-translate na difficulty
+        // Hanapin ang text na tugma sa category at difficulty, na active, tapos kumuha ng random (inRandomOrder)
         $text = SystemTypingText::where('category', $validated['category'])
-            ->where('difficulty_level', $dbDifficulty) 
+            ->where('difficulty_level', $validated['difficulty_level'])
             ->where('is_active', true)
             ->inRandomOrder()
             ->first();
