@@ -6,6 +6,7 @@ use App\Models\SystemTypingText;
 use App\Models\User;
 use App\Models\keystrokeMistake; 
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -15,9 +16,19 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // 1. Gagawa tayo ng 1 Specific Test User
+
         User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
+            'name' => 'Admin Boss',
+            'email' => 'admin@test.com',
+            'password' => Hash::make('admin123'),
+            'role' => 'admin',
+        ]);
+
+        User::factory()->create([
+            'name' => 'Regular Juan',
+            'email' => 'user@test.com',
+            'password' => Hash::make('user123'),
+            'role' => 'user', 
         ]);
 
         // // 2. Gagawa tayo ng 5 Random Users kasama ang LAHAT ng related data nila!

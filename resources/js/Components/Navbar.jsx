@@ -16,7 +16,9 @@ export default function Navbar({ auth }) {
         <header className="bg-[#131b2e] text-slate-400 font-medium flex justify-between items-center w-full px-6 md:px-12 h-20 max-w-[1920px] mx-auto fixed top-0 left-0 right-0 z-40">
             <div className="flex items-center gap-12">
                 <div className="text-xl font-bold tracking-tight text-white font-headline">LEXITYPE</div>
+                {auth?.user ? (
                 <nav className="hidden md:flex items-center gap-8 text-sm font-medium font-body">
+                
                     {/* Ginamit natin ang helper function dito */}
                     <Link href="/" className={navLinkClasses('/')}>
                         Home
@@ -24,7 +26,23 @@ export default function Navbar({ auth }) {
                     <Link href={route('about')} className={navLinkClasses('/about')}>
                         About
                     </Link>
+                    {auth?.user?.role === 'admin' ? (
+                        <Link href={route('dashboard')} className={navLinkClasses('/dashboard')}>
+                            Dashboard
+                        </Link>
+                        
+                    ) : null}
                 </nav>
+                ) : (
+                    <nav className="hidden md:flex items-center gap-8 text-sm font-medium font-body">
+                        <Link href="/" className={navLinkClasses('/')}>
+                            Home
+                        </Link>
+                        <Link href={route('about')} className={navLinkClasses('/about')}>
+                            About
+                        </Link>
+                    </nav>
+                )}
             </div>
             
             <div className="flex items-center gap-4">
@@ -32,18 +50,22 @@ export default function Navbar({ auth }) {
                     <button className="p-2 text-slate-400 hover:text-white transition-colors">
                         <span className="material-symbols-outlined">emoji_events</span>
                     </button>
-                    <button className="p-2 text-slate-400 hover:text-white transition-colors">
-                        <span className="material-symbols-outlined">query_stats</span>
-                    </button>
+                    
+                    {auth?.user?.role === 'user' ? (
+                        <button className="p-2 text-slate-400 hover:text-white transition-colors">
+                            <span className="material-symbols-outlined">query_stats</span>
+                        </button>
+                    ) : null}
                 </div>
 
-                {/* Preserved Authentication Routing Logic */}
                 {auth?.user ? (
                     <Link
-                        href={route('dashboard')}
+                        href={route('logout')}
+                        method="post"
+                        as="button"
                         className="px-5 py-2 text-sm font-semibold text-primary hover:text-white transition-all"
                     >
-                        Dashboard
+                        Log Out
                     </Link>
                 ) : (
                     <>
