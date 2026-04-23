@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import Navbar from '@/Components/Navbar';
 import axios from 'axios';
 
@@ -456,8 +456,10 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
         setAccuracy(100);
         setMistakes(0);
         setMistakeDetails([]); // Clear the list of mistakes
+        setShowFocusHint(true);
         lastKeystrokeTime.current = Date.now(); // Reset the time tracker
-        isTabPressed.current = false; 
+        isTabPressed.current = false;
+
         if (inputRef.current) inputRef.current.focus();
     };
 
@@ -650,7 +652,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                                         <div className="bg-primary-container p-1 rounded-2xl bg-gradient-to-br from-[#3d5afe] to-[#bbc3ff]">
                                             <div className="bg-[#0b1326] p-8 rounded-xl">
                                                 <p className="text-lg font-medium mb-4">Sign up to save your stats & unlock AI insights</p>
-                                                <button className="w-full py-4 bg-[#3d5afe] text-white font-bold rounded-lg hover:scale-[1.02] transition-transform">Create Free Account</button>
+                                                <Link href={route('register')} className="block w-full text-center py-4 bg-[#3d5afe] text-white font-bold rounded-lg hover:scale-[1.02] transition-transform">Create Free Account</Link>
                                             </div>
                                         </div>
                                     )}
@@ -667,12 +669,20 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                                     </div>
                                 </div>
                             </div>
-                            <button 
-                                onClick={resetTest} 
-                                className="mt-12 text-[#8e8fa2] hover:text-white underline underline-offset-4 transition-colors"
-                            >
-                                Maybe later, restart test
-                            </button>
+                            <div className="mt-12 flex flex-col items-center gap-3 md:flex-row md:justify-center">
+                                <button 
+                                    onClick={resetTest} 
+                                    className="w-full md:w-auto px-6 py-3 bg-[#3d5afe] text-white font-semibold rounded-lg hover:scale-[1.02] transition-transform"
+                                >
+                                    Restart test
+                                </button>
+                                <button 
+                                    onClick={() => cycleGameMode(activeCategory, activeDifficulty)} 
+                                    className="w-full md:w-auto px-6 py-3 border border-[#3d5afe] text-[#3d5afe] font-semibold rounded-lg hover:bg-[#3d5afe]/10 transition-colors"
+                                >
+                                    Next text
+                                </button>
+                            </div>
                         </div>
                     )}
                 </main>
