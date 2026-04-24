@@ -32,14 +32,14 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // // 2. Gagawa tayo ng 5 Random Users kasama ang LAHAT ng related data nila!
-        // User::factory(5)
+        User::factory(30)
         //     ->hasProfile()              // Gagawa ng 1 UserProfile
         //     ->hasStats()                // Gagawa ng 1 UserStat
-        //     ->hasTypingSessions(3)      // Gagawa ng 3 TypingSessions
+            ->hasTypingSessions(3)      // Gagawa ng 3 TypingSessions
         //     ->hasFeedbacks(2)           // Gagawa ng 2 UserFeedbacks
         //     ->hasCustomExercises(2)     // Gagawa ng 2 CustomExercises
         //     ->hasAiRecommendations(2)   // Gagawa ng 2 AIRecommendations
-        //     ->create();
+            ->create();
 
         // 3. System Typing Texts — use JSON seeder for deterministic content
         // If you prefer the old random factory data, uncomment the factory line below.
