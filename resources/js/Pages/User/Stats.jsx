@@ -1,15 +1,48 @@
-import React from 'react';
-import { Head, Link } from '@inertiajs/react';
+import React, { useState, useEffect } from 'react';
+import { Head, Link, router } from '@inertiajs/react';
 import Navbar from '@/Components/Navbar';
 
 export default function Stats({ 
     auth, 
-    sessionsHistory = [], 
+    sessionsHistory, 
     chartData = [], 
     heatmapData = {}, 
     troubleClusters = [], 
     averages = { wpm: 0, consistency: 0 } 
 }) {
+    
+    // --- Pagination Logic ---
+    const [pageInput, setPageInput] = useState(sessionsHistory?.current_page || 1);
+
+    // Sync input if current_page changes externally (e.g., via browser back/forward buttons)
+    useEffect(() => {
+        if (sessionsHistory?.current_page) {
+            setPageInput(sessionsHistory.current_page);
+        }
+    }, [sessionsHistory?.current_page]);
+
+    const handlePageChange = (page) => {
+        if (page >= 1 && page <= sessionsHistory.last_page) {
+            router.get(
+                window.location.pathname,
+                { page: page }, 
+                { preserveState: true, preserveScroll: true }
+            );
+        }
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter') {
+            const parsed = parseInt(pageInput, 10);
+            if (!isNaN(parsed) && parsed >= 1 && parsed <= sessionsHistory.last_page) {
+                handlePageChange(parsed);
+            } else {
+                setPageInput(sessionsHistory.current_page); // Reset to valid page if input is invalid
+            }
+        }
+    };
+
+    // --- Helper Functions ---
     
     // Status color helper for the history table
     const getStatusStyles = (status) => {
@@ -98,7 +131,7 @@ export default function Stats({
                     <section className="grid grid-cols-1 md:grid-cols-12 gap-8 items-end">
                         <div className="md:col-span-8">
                             <h1 className="font-headline text-5xl md:text-7xl font-bold tracking-tighter mb-2">Performance</h1>
-                            <p className="text-on-surface-variant max-w-xl font-light">Deep analysis of your kinetic momentum. Track consistency, identify bottlenecks, and refine your motor patterns through laboratory-grade data.</p>
+                            <p className="text-on-surface-variant max-w-xl font-light">Deep analysis of your LexiType momentum. Track consistency, identify bottlenecks, and refine your motor patterns through laboratory-grade data.</p>
                         </div>
                         <div className="md:col-span-4 flex justify-end gap-12">
                             <div className="text-right">
@@ -250,7 +283,7 @@ export default function Stats({
                                     </tr>
                                 </thead>
                                 <tbody className="text-sm divide-y divide-outline-variant/10">
-                                    {sessionsHistory && sessionsHistory.length > 0 ? sessionsHistory.map((session) => (
+                                    {sessionsHistory?.data && sessionsHistory.data.length > 0 ? sessionsHistory.data.map((session) => (
                                         <tr key={session.id} className="hover:bg-surface-container-high/30 transition-colors">
                                             <td className="px-8 py-5 text-on-surface">{session.date_time}</td>
                                             <td className="px-8 py-5 text-on-surface-variant">{session.mode}</td>
@@ -273,6 +306,38 @@ export default function Stats({
                                 </tbody>
                             </table>
                         </div>
+
+                        {/* --- Pagination Control --- */}
+                        {sessionsHistory?.last_page > 1 && (
+                            <div className="flex items-center justify-between p-6 bg-surface-container-low border-t border-outline-variant/10 rounded-b-xl">
+                                <button 
+                                    onClick={() => handlePageChange(sessionsHistory.current_page - 1)}
+                                    disabled={sessionsHistory.current_page === 1}
+                                    className="px-5 py-2 text-sm font-semibold text-on-surface-variant bg-surface-container-highest rounded-lg hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                >
+                                    Previous
+                                </button>
+                                
+                                <div className="flex items-center gap-3 text-sm text-on-surface-variant font-headline">
+                                    <input 
+                                        type="number" 
+                                        value={pageInput}
+                                        onChange={(e) => setPageInput(e.target.value)}
+                                        onKeyDown={handleKeyDown}
+                                        className="w-16 text-center bg-surface-container-highest border border-outline-variant/20 rounded-md text-white focus:ring-2 focus:ring-primary/50 focus:border-primary outline-none py-1.5 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-all"
+                                    />
+                                    <span>/ {sessionsHistory.last_page}</span>
+                                </div>
+
+                                <button 
+                                    onClick={() => handlePageChange(sessionsHistory.current_page + 1)}
+                                    disabled={sessionsHistory.current_page === sessionsHistory.last_page}
+                                    className="px-5 py-2 text-sm font-semibold text-on-surface-variant bg-surface-container-highest rounded-lg hover:text-white disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                                >
+                                    Next
+                                </button>
+                            </div>
+                        )}
                     </section>
                 </main>
             </div>

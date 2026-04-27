@@ -132,13 +132,13 @@ class TypingSessionController extends Controller
 
     public function showStats(Request $request)
     {
+        // 1. Authenticate user
         $user = $request->user();
-
         if (! $user) {
             return response()->json(['message' => 'Unauthenticated'], 401);
         }
 
-        // Fetch sessions (newest first) with mistake counts
+        // 2. Fetch all sessions for global stats
         $sessions = TypingSession::where('user_id', $user->id)
             ->withCount('keystrokeMistakes')
             ->orderBy('created_at', 'desc')
@@ -146,8 +146,14 @@ class TypingSessionController extends Controller
 
         $highestWpm = $sessions->max('wpm_score') ?: 0;
 
-        // Sessions for the chronology table (formatted)
-        $formattedSessions = $sessions->map(function ($session) use ($highestWpm) {
+        // 3. Fetch paginated sessions for chronology (5 per page)
+        $paginatedSessions = TypingSession::where('user_id', $user->id)
+            ->withCount('keystrokeMistakes')
+            ->orderBy('created_at', 'desc')
+            ->paginate(5);
+
+        // 4. Format paginated sessions
+        $formattedSessions = $paginatedSessions->through(function ($session) use ($highestWpm) {
             $date = Carbon::parse($session->created_at)->format('M d, Y · H:i');
             $mode = ucfirst($session->difficulty_played) . ' (' . $session->duration_seconds . 's)';
 
@@ -171,9 +177,9 @@ class TypingSessionController extends Controller
                 'mistakes' => (int) $session->keystroke_mistakes_count,
                 'status' => $status,
             ];
-        })->values()->toArray();
+        });
 
-        // Chart data: last 30 sessions, oldest -> newest
+        // 5. Calculate chart data (last 30 sessions)
         $chartSessions = $sessions->take(30)->reverse()->values();
         $chartData = $chartSessions->map(function ($s) {
             return [
@@ -182,7 +188,7 @@ class TypingSessionController extends Controller
             ];
         })->values()->toArray();
 
-        // Fetch mistakes for the user's sessions
+        // 6. Fetch keystroke mistakes
         $sessionIds = $sessions->pluck('id')->filter()->values()->toArray();
         if (empty($sessionIds)) {
             $mistakes = collect();
@@ -190,7 +196,7 @@ class TypingSessionController extends Controller
             $mistakes = keystrokeMistake::whereIn('typing_session_id', $sessionIds)->get();
         }
 
-        // Heatmap: count mistakes per expected character (uppercase)
+        // 7. Calculate heatmap data
         $heatmapData = $mistakes->groupBy(function ($m) {
             $char = $m->expected_character;
             $char = $char === null ? ' ' : $char;
@@ -198,7 +204,7 @@ class TypingSessionController extends Controller
             return strtoupper($char);
         })->map->count()->toArray();
 
-        // Trouble clusters: top 3 most-missed characters with average lag
+        // 8. Calculate trouble clusters
         $clusters = $mistakes->groupBy(function ($m) {
             $char = $m->expected_character;
             $char = $char === null ? ' ' : $char;
@@ -226,13 +232,13 @@ class TypingSessionController extends Controller
             ];
         })->values()->toArray();
 
-        // Averages shown in the header
+        // 9. Calculate averages
         $averages = [
             'wpm' => (int) round($sessions->avg('wpm_score') ?: 0),
             'consistency' => (int) round($sessions->avg('accuracy_percentage') ?: 0),
         ];
 
-        // Return everything the React component expects and render the Stats page
+        // 10. Render React component
         return Inertia::render('User/Stats', [
             'sessionsHistory' => $formattedSessions,
             'chartData' => $chartData,
@@ -241,5 +247,4 @@ class TypingSessionController extends Controller
             'averages' => $averages,
         ]);
     }
-
 }
