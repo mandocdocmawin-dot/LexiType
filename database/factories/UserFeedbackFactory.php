@@ -20,6 +20,7 @@ class UserFeedbackFactory extends Factory
     {
         return [
             // 'user_id' => \App\Models\User::factory(),
+            'category' => $this->faker->randomElement(['bug', 'feature_request', 'general']),
             'message' => $this->faker->paragraph(),
         ];
     }

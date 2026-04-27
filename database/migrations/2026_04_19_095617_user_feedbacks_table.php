@@ -14,6 +14,7 @@ return new class extends Migration
         Schema::create('user_feedbacks', function (Blueprint $table) {
             $table->id();
             $table->foreignUuid('user_id')->constrained()->onDelete('cascade');
+            $table->string('category');
             $table->text('message');
             $table->timestamps();
         });
