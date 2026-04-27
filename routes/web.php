@@ -25,17 +25,20 @@ Route::get('/about', function () {
     return Inertia::render('AboutApp');
 })->name('about');
 
+// --- PANGKALAHATANG TYPING ROUTES ---
 Route::post('/typing-sessions', [TypingSessionController::class, 'store']);
 Route::get('/typing-texts/random', [SystemTypingTextController::class, 'getRandomText']);
 Route::get('/typing-texts/difficulties', [SystemTypingTextController::class, 'getAvailableDifficulties']);
 Route::get('/typing-texts/list', [SystemTypingTextController::class, 'getTextsList']);
 
+// --- ROUTES NA KAILANGAN NAKALOG-IN ---
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    
+    // DITO NATIN IDINAGDAG ANG STATS ROUTE
+    Route::get('/stats', [TypingSessionController::class, 'showStats'])->name('stats');
 });
-
-
 
 require __DIR__.'/auth.php';

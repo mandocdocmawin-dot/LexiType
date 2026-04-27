@@ -6,6 +6,8 @@ use Illuminate\Http\Request;
 use App\Models\TypingSession;
 use App\Models\keystrokeMistake;
 use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
+use Carbon\Carbon;
 
 class TypingSessionController extends Controller
 {
@@ -127,4 +129,117 @@ class TypingSessionController extends Controller
             ], 500);
         }
     }
+
+    public function showStats(Request $request)
+    {
+        $user = $request->user();
+
+        if (! $user) {
+            return response()->json(['message' => 'Unauthenticated'], 401);
+        }
+
+        // Fetch sessions (newest first) with mistake counts
+        $sessions = TypingSession::where('user_id', $user->id)
+            ->withCount('keystrokeMistakes')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $highestWpm = $sessions->max('wpm_score') ?: 0;
+
+        // Sessions for the chronology table (formatted)
+        $formattedSessions = $sessions->map(function ($session) use ($highestWpm) {
+            $date = Carbon::parse($session->created_at)->format('M d, Y · H:i');
+            $mode = ucfirst($session->difficulty_played) . ' (' . $session->duration_seconds . 's)';
+
+            $status = 'Normal';
+            if ((int) $session->accuracy_percentage === 100) {
+                $status = 'Perfect';
+            } elseif ((int) $session->wpm_score >= $highestWpm && $highestWpm > 0) {
+                $status = 'New Record';
+            } elseif ((int) $session->wpm_score >= 120) {
+                $status = 'Peak Flow';
+            } elseif ((int) $session->accuracy_percentage < 95) {
+                $status = 'Fatigue';
+            }
+
+            return [
+                'id' => $session->id,
+                'date_time' => $date,
+                'mode' => $mode,
+                'wpm' => (int) $session->wpm_score,
+                'accuracy' => (string) $session->accuracy_percentage . '%',
+                'mistakes' => (int) $session->keystroke_mistakes_count,
+                'status' => $status,
+            ];
+        })->values()->toArray();
+
+        // Chart data: last 30 sessions, oldest -> newest
+        $chartSessions = $sessions->take(30)->reverse()->values();
+        $chartData = $chartSessions->map(function ($s) {
+            return [
+                'wpm' => (int) $s->wpm_score,
+                'accuracy' => (int) $s->accuracy_percentage,
+            ];
+        })->values()->toArray();
+
+        // Fetch mistakes for the user's sessions
+        $sessionIds = $sessions->pluck('id')->filter()->values()->toArray();
+        if (empty($sessionIds)) {
+            $mistakes = collect();
+        } else {
+            $mistakes = keystrokeMistake::whereIn('typing_session_id', $sessionIds)->get();
+        }
+
+        // Heatmap: count mistakes per expected character (uppercase)
+        $heatmapData = $mistakes->groupBy(function ($m) {
+            $char = $m->expected_character;
+            $char = $char === null ? ' ' : $char;
+            $char = trim($char) === '' ? ' ' : $char;
+            return strtoupper($char);
+        })->map->count()->toArray();
+
+        // Trouble clusters: top 3 most-missed characters with average lag
+        $clusters = $mistakes->groupBy(function ($m) {
+            $char = $m->expected_character;
+            $char = $char === null ? ' ' : $char;
+            $char = trim($char) === '' ? ' ' : $char;
+            return strtoupper($char);
+        })->map(function ($group, $key) {
+            $avgLag = (int) round($group->avg(function ($item) {
+                return is_numeric($item->time_to_press_ms) ? (float) $item->time_to_press_ms : (float) preg_replace('/[^0-9.]/', '', $item->time_to_press_ms);
+            }));
+
+            return [
+                'key' => $key,
+                'lag' => $avgLag,
+                'count' => $group->count(),
+            ];
+        })->sortByDesc('count')->take(3)->values();
+
+        $maxLag = $clusters->max('lag') ?: 1;
+        $troubleClusters = $clusters->map(function ($c) use ($maxLag) {
+            $percentage = (int) min(100, round(($c['lag'] / max($maxLag, 1)) * 100));
+            return [
+                'key' => $c['key'],
+                'lag' => (int) $c['lag'],
+                'percentage' => $percentage,
+            ];
+        })->values()->toArray();
+
+        // Averages shown in the header
+        $averages = [
+            'wpm' => (int) round($sessions->avg('wpm_score') ?: 0),
+            'consistency' => (int) round($sessions->avg('accuracy_percentage') ?: 0),
+        ];
+
+        // Return everything the React component expects and render the Stats page
+        return Inertia::render('User/Stats', [
+            'sessionsHistory' => $formattedSessions,
+            'chartData' => $chartData,
+            'heatmapData' => $heatmapData,
+            'troubleClusters' => $troubleClusters,
+            'averages' => $averages,
+        ]);
+    }
+
 }

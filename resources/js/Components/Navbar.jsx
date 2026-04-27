@@ -50,10 +50,17 @@ export default function Navbar({ auth }) {
                             <span className="material-symbols-outlined">emoji_events</span>
                         </button>
                         
-                        {auth?.user?.role === 'user' ? (
-                            <button className="p-2 text-slate-400 hover:text-white transition-colors">
+                       {auth?.user?.role === 'user' ? (
+                            <Link 
+                                href={route('stats')} 
+                                className={`p-2 rounded-lg flex items-center justify-center transition-all ${
+                                    url?.startsWith('/stats') 
+                                        ? 'text-[#bbc3ff] bg-[#222a3d]/50' 
+                                        : 'text-slate-400 hover:text-white hover:bg-[#222a3d]/30'
+                                }`}
+                            >
                                 <span className="material-symbols-outlined">query_stats</span>
-                            </button>
+                            </Link>
                         ) : null}
                     </div>
 
