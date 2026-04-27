@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import Navbar from '@/Components/Navbar';
 import axios from 'axios';
+import Feedback from '@/Components/Feedback'; // Na-import na natin yung Feedback
 
 export default function Welcome({ auth, laravelVersion, phpVersion }) {
     // --- TYPING ENGINE STATES ---
@@ -22,6 +23,17 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
     const [activeCategory, setActiveCategory] = useState('snippet');
     const [activeDifficulty, setActiveDifficulty] = useState(2); 
     const [showFocusHint, setShowFocusHint] = useState(true);
+
+    // --- FEEDBACK MODAL STATE ---
+    const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+
+    const handleFeedbackClick = () => {
+        if (auth.user) {
+            setIsFeedbackModalOpen(true);
+        } else {
+            alert('You are required to sign in to submit feedback.');
+        }
+    };
 
     // Function to fetch text from the backend without reloading the page
     const changeGameMode = async (newCategory, newDifficulty) => {
@@ -202,6 +214,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
     // Global Typing Focus (only on explicit activation)
     useEffect(() => {
         const handleGlobalClick = () => {
+            if (isFeedbackModalOpen) return;
             if (status === 'finished') return;
             if (inputRef.current) {
                 inputRef.current.focus();
@@ -210,6 +223,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
         };
 
         const handleGlobalKeydown = (e) => {
+            if (isFeedbackModalOpen) return;
             if (status === 'finished') return;
             const key = e.key;
             
@@ -265,7 +279,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
             window.removeEventListener('click', handleGlobalClick);
             window.removeEventListener('keydown', handleGlobalKeydown);
         };
-    }, [status]); 
+    }, [status, isFeedbackModalOpen]); 
 
     // --- LOGIC: START TIMER ---
     useEffect(() => {
@@ -686,6 +700,19 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                         </div>
                     )}
                 </main>
+                
+                {/* --- FLOATING FEEDBACK BUTTON --- */}
+                {auth?.user ? (
+                    <div className={`fixed bottom-8 left-8 z-50 transition-opacity duration-500 ${status === 'typing' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+                        <button 
+                            onClick={handleFeedbackClick}
+                            className="flex items-center gap-3 bg-[#131b2e]/80 backdrop-blur-md px-5 py-3 rounded-full border border-white/10 hover:bg-[#3d5afe]/20 hover:text-white transition-all group shadow-[0px_10px_20px_rgba(6,14,32,0.4)]"
+                        >
+                        <span className="material-symbols-outlined text-[#3d5afe] group-hover:text-white transition-colors">maps_ugc</span>
+                        <span className="text-xs font-bold uppercase tracking-widest font-headline text-slate-300">Send Feedback</span>
+                    </button>
+                </div>
+                ) : null}
 
                 <div className={`fixed bottom-8 right-8 z-50 group transition-opacity duration-500 ${status === 'typing' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
                     <div className="absolute bottom-full right-0 mb-4 w-64 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 pointer-events-none">
@@ -707,6 +734,12 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                     Laravel v{laravelVersion} | PHP v{phpVersion}
                 </div>
             </div>
+
+            {/* --- RENDER FEEDBACK MODAL --- */}
+            <Feedback 
+                isOpen={isFeedbackModalOpen} 
+                onClose={() => setIsFeedbackModalOpen(false)} 
+            />
         </>
     );
 }

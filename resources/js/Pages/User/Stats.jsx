@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import Navbar from '@/Components/Navbar';
+import Feedback from '@/Components/Feedback'; // Imported Feedback Modal
 
 export default function Stats({ 
     auth, 
@@ -14,7 +15,18 @@ export default function Stats({
     // --- Pagination Logic ---
     const [pageInput, setPageInput] = useState(sessionsHistory?.current_page || 1);
 
-    // Sync input if current_page changes externally (e.g., via browser back/forward buttons)
+    // --- Feedback Modal State ---
+    const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+
+    const handleFeedbackClick = () => {
+        if (auth?.user) {
+            setIsFeedbackModalOpen(true);
+        } else {
+            alert('You are required to sign in to submit feedback.');
+        }
+    };
+
+    // Sync input if current_page changes externally
     useEffect(() => {
         if (sessionsHistory?.current_page) {
             setPageInput(sessionsHistory.current_page);
@@ -37,14 +49,12 @@ export default function Stats({
             if (!isNaN(parsed) && parsed >= 1 && parsed <= sessionsHistory.last_page) {
                 handlePageChange(parsed);
             } else {
-                setPageInput(sessionsHistory.current_page); // Reset to valid page if input is invalid
+                setPageInput(sessionsHistory.current_page); 
             }
         }
     };
 
     // --- Helper Functions ---
-    
-    // Status color helper for the history table
     const getStatusStyles = (status) => {
         switch(status) {
             case 'New Record': return 'bg-secondary/10 text-secondary';
@@ -55,7 +65,6 @@ export default function Stats({
         }
     };
 
-    // Helper to generate dynamic SVG paths for the Line Chart
     const generateSvgPath = (data, valueKey, maxY) => {
         if (!data || data.length === 0) return "M0,300 L1000,300";
         if (data.length === 1) return `M0,${300 - (data[0][valueKey] / maxY * 300)} L1000,${300 - (data[0][valueKey] / maxY * 300)}`;
@@ -76,7 +85,6 @@ export default function Stats({
     const wpmPath = generateSvgPath(chartData, 'wpm', 200);
     const accuracyPath = generateSvgPath(chartData, 'accuracy', 100);
 
-    // Helper to determine Heatmap Key Colors
     const getHeatmapColor = (char) => {
         const count = heatmapData[char] || 0;
         const maxMistakes = Math.max(...Object.values(heatmapData), 1);
@@ -87,7 +95,6 @@ export default function Stats({
         return "bg-tertiary text-white shadow-[0_0_15px_rgba(255,178,183,0.3)]";
     };
 
-    // Keyboard Layout arrays
     const row1 = ['Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P'];
     const row2 = ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L'];
     const row3 = ['Z', 'X', 'C', 'V', 'B', 'N', 'M'];
@@ -112,18 +119,10 @@ export default function Stats({
                     .material-symbols-outlined {
                         font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
                     }
-                    .caret-custom {
-                        width: 2px;
-                        height: 1.5rem;
-                        background-color: #bbc3ff;
-                        box-shadow: 0 0 8px #3d5afe;
-                        display: inline-block;
-                        vertical-align: middle;
-                    }
                 `
             }} />
 
-            <div className="bg-background text-on-surface font-body min-h-screen overflow-x-hidden">
+            <div className="bg-background text-on-surface font-body min-h-screen overflow-x-hidden relative">
                 <Navbar auth={auth} />
 
                 <main className="pt-32 pb-32 px-6 md:px-12 max-w-screen-2xl mx-auto space-y-8">
@@ -339,8 +338,42 @@ export default function Stats({
                             </div>
                         )}
                     </section>
+
+                    {/* Left Floating Button: Feedback */}
+                    <div className="fixed bottom-8 left-8 z-50 transition-opacity duration-500 opacity-100">
+                        <button 
+                            onClick={handleFeedbackClick}
+                            className="flex items-center gap-3 bg-surface-container-high/80 backdrop-blur-md px-5 py-3 rounded-full border border-outline-variant/10 hover:bg-primary-container hover:text-white transition-all group shadow-xl"
+                        >
+                            <span className="material-symbols-outlined text-primary group-hover:text-white transition-colors">maps_ugc</span>
+                            <span className="text-xs font-bold uppercase tracking-widest font-headline">Send Feedback</span>
+                        </button>
+                    </div>
+
+                    {/* Right Floating Button: AI Coach (Status logic removed so it's always visible) */}
+                    <div className="fixed bottom-8 right-8 z-50 group transition-opacity duration-500 opacity-100">
+                        <div className="absolute bottom-full right-0 mb-4 w-64 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 pointer-events-none">
+                            <div className="bg-[#131b2e]/90 backdrop-blur-xl p-4 rounded-xl shadow-[0px_20px_40px_rgba(6,14,32,0.4)] border border-white/10">
+                                <p className="text-sm font-medium text-white mb-1">Log in to chat with your AI Coach!</p>
+                                <p className="text-xs text-[#8e8fa2]">Get personalized feedback on your typing cadence and posture.</p>
+                            </div>
+                            <div className="w-3 h-3 bg-[#131b2e]/90 rotate-45 absolute -bottom-1.5 right-6 border-r border-b border-white/10"></div>
+                        </div>
+                        <div className="bg-[#131b2e]/70 backdrop-blur-xl rounded-xl w-16 h-16 shadow-[0px_20px_40px_rgba(6,14,32,0.4)] flex items-center justify-center cursor-pointer hover:scale-110 transition-transform duration-300">
+                            <div className="flex flex-col items-center justify-center text-slate-400">
+                                <span className="material-symbols-outlined text-2xl">auto_awesome</span>
+                                <span className="text-[10px] font-semibold font-body tracking-wider mt-1">LexiType</span>
+                            </div>
+                        </div>
+                    </div>
                 </main>
             </div>
+
+            {/* Modal Components */}
+            <Feedback 
+                isOpen={isFeedbackModalOpen} 
+                onClose={() => setIsFeedbackModalOpen(false)} 
+            />
         </>
     );
 }
