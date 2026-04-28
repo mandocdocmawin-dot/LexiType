@@ -8,6 +8,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -18,8 +19,21 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): Response
     {
+        $user = $request->user();
+
+        $maxWpm = DB::table('typing_sessions')
+            ->where('user_id', $user->id)
+            ->max('wpm_score') ?? 0;
+
+        $maxAccuracy = DB::table('typing_sessions')
+            ->where('user_id', $user->id)
+            ->max('accuracy_percentage') ?? 0;
+
+        $user->max_wpm_score = $maxWpm;
+        $user->max_accuracy_percentage = $maxAccuracy;
+
         return Inertia::render('Profile/Edit', [
-            'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
+            'mustVerifyEmail' => $user instanceof MustVerifyEmail,
             'status' => session('status'),
         ]);
     }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import Navbar from '@/Components/Navbar';
-import Feedback from '@/Components/Feedback'; // Imported Feedback Modal
+import Feedback from '@/Components/Feedback';
 
 export default function Stats({ 
     auth, 
