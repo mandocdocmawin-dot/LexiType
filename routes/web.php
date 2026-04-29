@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TypingSessionController; 
 use App\Http\Controllers\SystemTypingTextController;
 use App\Http\Controllers\UserFeedbackController;
+use App\Http\Controllers\AIAnalysisController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -39,6 +40,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::get('/stats', [TypingSessionController::class, 'showStats'])->name('stats');
     Route::resource('feedback', UserFeedbackController::class)->only(['store']);
+    Route::post('/ai-analysis', [AIAnalysisController::class, 'getAnalysis']);
 });
 
 // --- ADMIN ROUTES ---

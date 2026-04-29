@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Head, Link } from '@inertiajs/react';
 import Navbar from '@/Components/Navbar';
 import axios from 'axios';
-import Feedback from '@/Components/Feedback'; // Na-import na natin yung Feedback
+import Feedback from '@/Components/Feedback'; 
+import AiChatModal from '@/Components/AiChatModal';
 
 export default function Welcome({ auth, laravelVersion, phpVersion }) {
     // --- TYPING ENGINE STATES ---
@@ -26,6 +27,17 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
 
     // --- FEEDBACK MODAL STATE ---
     const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+
+    // --- AI CHAT MODAL STATE ---  
+    const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+
+    const handleAiClick = () => {
+        if (auth.user) {
+            setIsAiModalOpen(true);
+        } else {
+            alert('Please log in to chat with your AI Coach!');
+        }
+    };
 
     const handleFeedbackClick = () => {
         if (auth.user) {
@@ -215,6 +227,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
     useEffect(() => {
         const handleGlobalClick = () => {
             if (isFeedbackModalOpen) return;
+            if (isAiModalOpen) return;
             if (status === 'finished') return;
             if (inputRef.current) {
                 inputRef.current.focus();
@@ -224,6 +237,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
 
         const handleGlobalKeydown = (e) => {
             if (isFeedbackModalOpen) return;
+            if (isAiModalOpen) return;
             if (status === 'finished') return;
             const key = e.key;
             
@@ -279,7 +293,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
             window.removeEventListener('click', handleGlobalClick);
             window.removeEventListener('keydown', handleGlobalKeydown);
         };
-    }, [status, isFeedbackModalOpen]); 
+    }, [status, isFeedbackModalOpen, isAiModalOpen]); 
 
     // --- LOGIC: START TIMER ---
     useEffect(() => {
@@ -714,7 +728,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                 </div>
                 ) : null}
 
-                <div className={`fixed bottom-8 right-8 z-50 group transition-opacity duration-500 ${status === 'typing' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+               <div className={`fixed bottom-8 right-8 z-50 group transition-opacity duration-500 ${status === 'typing' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
                     <div className="absolute bottom-full right-0 mb-4 w-64 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 pointer-events-none">
                         <div className="bg-[#131b2e]/90 backdrop-blur-xl p-4 rounded-xl shadow-[0px_20px_40px_rgba(6,14,32,0.4)] border border-white/10">
                             <p className="text-sm font-medium text-white mb-1">Log in to chat with your AI Coach!</p>
@@ -722,7 +736,8 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                         </div>
                         <div className="w-3 h-3 bg-[#131b2e]/90 rotate-45 absolute -bottom-1.5 right-6 border-r border-b border-white/10"></div>
                     </div>
-                    <div className="bg-[#131b2e]/70 backdrop-blur-xl rounded-xl w-16 h-16 shadow-[0px_20px_40px_rgba(6,14,32,0.4)] flex items-center justify-center cursor-pointer hover:scale-110 transition-transform duration-300">
+                    {/* DITO NILAGAY ANG onClick={handleAiClick} */}
+                    <div onClick={handleAiClick} className="bg-[#131b2e]/70 backdrop-blur-xl rounded-xl w-16 h-16 shadow-[0px_20px_40px_rgba(6,14,32,0.4)] flex items-center justify-center cursor-pointer hover:scale-110 transition-transform duration-300">
                         <div className="flex flex-col items-center justify-center text-slate-400">
                             <span className="material-symbols-outlined text-2xl">auto_awesome</span>
                             <span className="text-[10px] font-semibold font-body tracking-wider mt-1">LexiType</span>
@@ -739,6 +754,12 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
             <Feedback 
                 isOpen={isFeedbackModalOpen} 
                 onClose={() => setIsFeedbackModalOpen(false)} 
+            />
+
+            <AiChatModal 
+                isOpen={isAiModalOpen} 
+                onClose={() => setIsAiModalOpen(false)} 
+                auth={auth} 
             />
         </>
     );

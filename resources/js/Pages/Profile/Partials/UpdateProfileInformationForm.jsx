@@ -33,6 +33,7 @@ export default function UpdateProfileInformationForm({ mustVerifyEmail, status, 
                         <input 
                             id="name" 
                             type="text" 
+                            maxLength="15"
                             value={data.name} 
                             onChange={e => setData('name', e.target.value)} 
                             className="w-full bg-surface-container-lowest border-none rounded-lg py-4 pl-12 pr-4 text-on-surface focus:ring-2 focus:ring-primary-container transition-all font-body outline-none" 
