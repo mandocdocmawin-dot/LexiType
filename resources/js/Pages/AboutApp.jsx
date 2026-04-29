@@ -5,11 +5,9 @@ import Feedback from '@/Components/Feedback';
 import AiChatModal from '@/Components/AiChatModal'; 
 
 export default function AboutApp({ auth }) {
-    // --- MODAL STATES ---
     const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
     const [isAiModalOpen, setIsAiModalOpen] = useState(false);
 
-    // --- HANDLERS ---
     const handleFeedbackClick = () => {
         if (auth?.user) {
             setIsFeedbackModalOpen(true);
@@ -41,33 +39,28 @@ export default function AboutApp({ auth }) {
                 />
             </Head>
 
-            {/* Custom Styles Injection */}
             <style dangerouslySetInnerHTML={{
                 __html: `
                     .material-symbols-outlined {
                         font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
                     }
-                    .caret-custom {
-                        width: 2px;
-                        height: 1.5rem;
-                        background-color: #bbc3ff;
-                    }
                 `
             }} />
 
-            <div className="min-h-screen bg-[#060e20] text-[#8e8fa2] font-body flex flex-col relative overflow-hidden">
-                {/* Ipinasa natin ang handler sa Navbar kung sakaling nandoon ang Feedback button */}
-                <Navbar auth={auth} onFeedbackClick={handleFeedbackClick} />
+            {/* MAIN CONTENT DIV */}
+            <div className="min-h-screen bg-[#0b1326] font-inter text-slate-300 selection:bg-[#3d5afe] selection:text-white relative overflow-hidden">
+                <div className="absolute top-0 left-0 w-full h-[500px] bg-gradient-to-b from-[#1a233a] to-transparent opacity-50 pointer-events-none"></div>
+                
+                <Navbar auth={auth} />
 
-                <main className="flex-1 flex flex-col items-center pt-24 pb-12 px-4 md:px-8 z-10">
-                    <div className="w-full max-w-4xl">
-                        
+                <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 pb-16 relative z-10">
+                    <div className="max-w-3xl mx-auto">
                         <div className="text-center mb-16">
-                            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">
-                                About <span className="text-[#bbc3ff]">LexiType</span>
+                            <h1 className="text-4xl md:text-5xl font-bold text-white mb-6 font-space tracking-tight">
+                                Elevate Your <span className="text-[#3d5afe]">Typing</span> Experience
                             </h1>
-                            <p className="text-lg text-[#8e8fa2] max-w-2xl mx-auto">
-                                Elevate your typing experience with AI-powered feedback and detailed analytics.
+                            <p className="text-lg text-slate-400 leading-relaxed">
+                                Ang application na ito ay ginawa upang tulungan kang mapabuti ang iyong bilis at accuracy sa pag-type sa pamamagitan ng AI-driven analysis at minimalist na kapaligiran.
                             </p>
                         </div>
 
@@ -87,38 +80,49 @@ export default function AboutApp({ auth }) {
                                 <p className="text-sm">Subaybayan ang iyong WPM, accuracy, at consistency sa bawat session.</p>
                             </div>
                         </section>
-
                     </div>
                 </main>
+            </div> 
 
-                {/* --- FLOATING AI BUTTON --- */}
-                <div className={`fixed bottom-8 right-8 z-50 group transition-opacity duration-500 opacity-100`}>
-                    <div className="absolute bottom-full right-0 mb-4 w-64 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 pointer-events-none">
-                        <div className="bg-[#131b2e]/90 backdrop-blur-xl p-4 rounded-xl shadow-[0px_20px_40px_rgba(6,14,32,0.4)] border border-white/10">
-                            {auth?.user ? (
-                                <>
-                                    <p className="text-sm font-medium text-white mb-1">Chat with LexiType!</p>
-                                    <p className="text-xs text-[#8e8fa2]">Ask your AI coach for personalized typing tips and feedback.</p>
-                                </>
-                            ) : (
-                                <>
-                                    <p className="text-sm font-medium text-white mb-1">Log in to chat with your AI Coach!</p>
-                                    <p className="text-xs text-[#8e8fa2]">Get personalized feedback on your typing cadence and posture.</p>
-                                </>
-                            )}
-                        </div>
-                        <div className="w-3 h-3 bg-[#131b2e]/90 rotate-45 absolute -bottom-1.5 right-6 border-r border-b border-white/10"></div>
+            {/* --- FLOATING AI COACH BUTTON (Sa Ibaba) --- */}
+            <div className="fixed bottom-8 right-8 z-50 flex items-end justify-end pointer-events-auto">
+                <div className="flex flex-col items-end mr-4 mb-2 relative group">
+                    <div className="bg-[#131b2e]/90 backdrop-blur-xl p-4 rounded-xl shadow-[0px_20px_40px_rgba(6,14,32,0.4)] border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                        {auth?.user ? (
+                            <>
+                                <p className="text-sm font-medium text-white mb-1">LexiType AI Coach</p>
+                                <p className="text-xs text-[#8e8fa2]">Click to get insights on your typing performance.</p>
+                            </>
+                        ) : (
+                            <>
+                                <p className="text-sm font-medium text-white mb-1">Log in to chat with your AI Coach!</p>
+                                <p className="text-xs text-[#8e8fa2]">Get personalized feedback on your typing cadence and posture.</p>
+                            </>
+                        )}
                     </div>
-                    
-                    <div onClick={handleAiClick} className="bg-[#131b2e]/70 backdrop-blur-xl rounded-xl w-16 h-16 shadow-[0px_20px_40px_rgba(6,14,32,0.4)] flex items-center justify-center cursor-pointer hover:scale-110 transition-transform duration-300">
-                        <div className="flex flex-col items-center justify-center text-slate-400">
-                            <span className="material-symbols-outlined text-2xl">auto_awesome</span>
-                            <span className="text-[10px] font-semibold font-body tracking-wider mt-1">LexiType</span>
-                        </div>
+                    <div className="w-3 h-3 bg-[#131b2e]/90 rotate-45 absolute -bottom-1.5 right-6 border-r border-b border-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
+                </div>
+                
+                <div onClick={handleAiClick} className="bg-[#131b2e]/70 backdrop-blur-xl rounded-xl w-16 h-16 shadow-[0px_20px_40px_rgba(6,14,32,0.4)] flex items-center justify-center cursor-pointer hover:scale-110 transition-transform duration-300">
+                    <div className="flex flex-col items-center justify-center text-slate-400">
+                        <span className="material-symbols-outlined text-2xl">auto_awesome</span>
+                        <span className="text-[10px] font-semibold font-body tracking-wider mt-1">LexiType</span>
                     </div>
                 </div>
-
             </div>
+
+            {/* --- FLOATING FEEDBACK BUTTON --- */}
+            {auth?.user ? (
+                <div className={`fixed bottom-8 left-8 z-50 transition-opacity duration-500 ${status === 'typing' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+                    <button 
+                        onClick={handleFeedbackClick}
+                        className="flex items-center gap-3 bg-[#131b2e]/80 backdrop-blur-md px-5 py-3 rounded-full border border-white/10 hover:bg-[#3d5afe]/20 hover:text-white transition-all group shadow-[0px_10px_20px_rgba(6,14,32,0.4)]"
+                    >
+                    <span className="material-symbols-outlined text-[#3d5afe] group-hover:text-white transition-colors">maps_ugc</span>
+                    <span className="text-xs font-bold uppercase tracking-widest font-headline text-slate-300">Send Feedback</span>
+                </button>
+            </div>
+            ) : null}
 
             {/* --- MODAL COMPONENTS --- */}
             <Feedback 

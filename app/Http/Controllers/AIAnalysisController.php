@@ -21,8 +21,17 @@ class AIAnalysisController extends Controller
         }
 
         $dailyLimit = 6;
-        $cacheKey = 'ai_chat_count_user_' . $user->id; 
-        $requestsToday = Cache::get($cacheKey, 0); 
+        
+        $cacheKey = 'ai_limit_v3_user_' . $user->id; 
+        
+        $cacheData = Cache::get($cacheKey, [
+            'count' => 0,
+            'reset_at' => Carbon::tomorrow()->toDateTimeString() 
+        ]); 
+
+        $requestsToday = $cacheData['count'];
+        
+        $resetDateObj = Carbon::parse($cacheData['reset_at']);
 
         $bestWpm = TypingSession::where('user_id', $user->id)->max('wpm_score') ?? 0;
         $avgAccuracy = TypingSession::where('user_id', $user->id)->avg('accuracy_percentage') ?? 100;
@@ -49,8 +58,10 @@ class AIAnalysisController extends Controller
         }
 
         if ($requestsToday >= $dailyLimit) {
+            $resetDateStr = $resetDateObj->format('F j, Y \a\t g:i A');
+
             return response()->json([
-                'message' => "You have reached your limit of {$dailyLimit} AI questions for today. Your limit will reset tomorrow.",
+                'message' => "You have reached your limit of {$dailyLimit} AI questions. Your limit will reset on {$resetDateStr}.",
                 'best_wpm' => $bestWpm,
                 'avg_accuracy' => round($avgAccuracy, 2),
                 'focus_letters' => $focusLetters,
@@ -70,25 +81,11 @@ class AIAnalysisController extends Controller
 
         $apiKey = env('GEMINI_API_KEY');
 
-        if (app()->environment('local')) {
-            $preview = 'NULL';
-            if ($apiKey) {
-                $len = strlen($apiKey);
-                if ($len <= 8) {
-                    $preview = substr($apiKey, 0, 2) . str_repeat('*', max(0, $len - 4)) . substr($apiKey, -2);
-                } else {
-                    $preview = substr($apiKey, 0, 4) . str_repeat('*', max(0, $len - 8)) . substr($apiKey, -4);
-                }
-            }
-            Log::info('Gemini API key preview', ['preview' => $preview]);
-        }
-
-        $aiMessage = "Keep practicing! I need more data to analyze your typing."; 
+        $aiMessage = "Keep practicing! I need more data to analyze your typing.";
 
         try {
             $modelUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={$apiKey}";
-            Log::info('Gemini request', ['url' => $modelUrl]);
-
+            
             $response = Http::withoutVerifying()->withHeaders([
                 'Content-Type' => 'application/json',
             ])->post($modelUrl, [
@@ -100,7 +97,12 @@ class AIAnalysisController extends Controller
             if ($response->successful()) {
                 $data = $response->json();
                 $aiMessage = $data['candidates'][0]['content']['parts'][0]['text'] ?? $aiMessage;
-                Cache::put($cacheKey, $requestsToday + 1, Carbon::tomorrow());
+                
+                Cache::put($cacheKey, [
+                    'count' => $requestsToday + 1,
+                    'reset_at' => $resetDateObj->toDateTimeString()
+                ], $resetDateObj);
+
             } else {
                 $status = $response->status();
                 $body = $response->body();

@@ -351,16 +351,18 @@ export default function Stats({
                         )}
                     </section>
 
-                    {/* Left Floating Button: Feedback */}
-                    <div className="fixed bottom-8 left-8 z-50 transition-opacity duration-500 opacity-100">
-                        <button 
-                            onClick={handleFeedbackClick}
-                            className="flex items-center gap-3 bg-surface-container-high/80 backdrop-blur-md px-5 py-3 rounded-full border border-outline-variant/10 hover:bg-primary-container hover:text-white transition-all group shadow-xl"
-                        >
-                            <span className="material-symbols-outlined text-primary group-hover:text-white transition-colors">maps_ugc</span>
-                            <span className="text-xs font-bold uppercase tracking-widest font-headline">Send Feedback</span>
+                    {/* --- FLOATING FEEDBACK BUTTON --- */}
+                    {auth?.user ? (
+                        <div className={`fixed bottom-8 left-8 z-50 transition-opacity duration-500 ${status === 'typing' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+                            <button 
+                                onClick={handleFeedbackClick}
+                                className="flex items-center gap-3 bg-[#131b2e]/80 backdrop-blur-md px-5 py-3 rounded-full border border-white/10 hover:bg-[#3d5afe]/20 hover:text-white transition-all group shadow-[0px_10px_20px_rgba(6,14,32,0.4)]"
+                            >
+                            <span className="material-symbols-outlined text-[#3d5afe] group-hover:text-white transition-colors">maps_ugc</span>
+                            <span className="text-xs font-bold uppercase tracking-widest font-headline text-slate-300">Send Feedback</span>
                         </button>
                     </div>
+                    ) : null}
 
                    {/* Floating AI Button sa Stats */}
                     <div className={`fixed bottom-8 right-8 z-50 group transition-opacity duration-500 opacity-100`}>

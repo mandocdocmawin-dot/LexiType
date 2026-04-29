@@ -20,11 +20,23 @@ export default function AiChatModal({ isOpen, onClose, auth }) {
     // Fetch initial feedback automatically when the modal opens
     useEffect(() => {
         if (isOpen && messages.length === 0) {
-            fetchAIAnalysis();
+            // CHECK NATIN KUNG NAKA-LOG IN ANG USER
+            if (auth?.user) {
+                fetchAIAnalysis();
+            } else {
+                // KUNG HINDI NAKA-LOG IN, ITO LANG ANG IPAPAKITA NATIN
+                setMessages([{ 
+                    role: 'ai', 
+                    content: "Hello! Please log in to your account so I can analyze your typing data and give you personalized tips." 
+                }]);
+            }
         }
     }, [isOpen]);
 
     const fetchAIAnalysis = async (question = "") => {
+        // Double check kung naka-log in bago mag-request
+        if (!auth?.user) return; 
+
         setIsLoading(true);
 
         // If the user typed a question, append it to the chat history
@@ -40,21 +52,22 @@ export default function AiChatModal({ isOpen, onClose, auth }) {
             // Append the AI's response to the chat history
             setMessages((prev) => [...prev, { 
                 role: 'ai', 
-                content: response.data.message,
-                stats: {
-                    wpm: response.data.best_wpm,
-                    accuracy: response.data.avg_accuracy,
-                    focusLetters: response.data.focus_letters
-                }
+                content: response.data.message 
             }]);
 
+            // Update limit
             if (response.data.remaining_requests !== undefined) {
                 setRemainingLimit(response.data.remaining_requests);
             }
 
         } catch (error) {
-            console.error("AI Analysis Error:", error);
-            setMessages((prev) => [...prev, { role: 'ai', content: "Sorry, I cannot connect to the server right now." }]);
+            console.error("AI Fetch Error:", error);
+            
+            // Show generic error message on failure
+            setMessages((prev) => [...prev, { 
+                role: 'ai', 
+                content: "Sorry, I cannot connect to the server right now." 
+            }]);
         } finally {
             setIsLoading(false);
         }
@@ -62,68 +75,73 @@ export default function AiChatModal({ isOpen, onClose, auth }) {
 
     const handleSendMessage = (e) => {
         e.preventDefault();
-        if (!inputQuestion.trim()) return;
-        
-        const questionToAsk = inputQuestion;
-        setInputQuestion(""); // Clear the input box
-        fetchAIAnalysis(questionToAsk);
+        if (!inputQuestion.trim() || isLoading) return;
+
+        fetchAIAnalysis(inputQuestion);
+        setInputQuestion(""); // Clear input
     };
 
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <div className="bg-[#0b1326] border border-[#3d5afe]/30 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden flex flex-col h-[600px] max-h-[90vh]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            {/* Backdrop overlay */}
+            <div 
+                className="absolute inset-0 bg-[#060e20]/80 backdrop-blur-sm"
+                onClick={onClose}
+            ></div>
+
+            {/* Modal Content */}
+            <div className="relative w-full max-w-md bg-[#0b1326] rounded-2xl shadow-[0_0_50px_rgba(61,90,254,0.15)] border border-[#3d5afe]/20 overflow-hidden flex flex-col h-[600px] max-h-[80vh]">
                 
                 {/* Header */}
-                <div className="bg-[#131b2e] p-4 flex justify-between items-center border-b border-[#3d5afe]/20">
+                <div className="flex items-center justify-between px-6 py-4 bg-[#131b2e] border-b border-[#3d5afe]/20">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-full bg-[#3d5afe]/20 flex items-center justify-center text-[#3d5afe]">
                             <span className="material-symbols-outlined">auto_awesome</span>
                         </div>
                         <div>
-                            <h2 className="text-white font-bold font-headline tracking-wide">LexiType Coach</h2>
-                            {remainingLimit !== null && (
-                                <p className="text-xs text-[#8e8fa2]">Credits remaining today: {remainingLimit}</p>
-                            )}
+                            <h2 className="text-white font-bold font-space text-lg">LexiType AI</h2>
+                            <p className="text-xs text-[#8e8fa2] font-body">Your Personal Typing Coach</p>
                         </div>
                     </div>
-                    <button onClick={onClose} className="text-[#8e8fa2] hover:text-white transition-colors">
+                    <button 
+                        onClick={onClose}
+                        className="text-[#8e8fa2] hover:text-white transition-colors"
+                    >
                         <span className="material-symbols-outlined">close</span>
                     </button>
                 </div>
 
-                {/* Chat Messages Area */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 font-body">
-                    {messages.map((msg, index) => (
-                        <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[85%] p-3 rounded-2xl ${
+                {/* Quota Indicator (Only show if user is logged in) */}
+                {auth?.user && remainingLimit !== null && (
+                    <div className="px-6 py-2 bg-[#3d5afe]/10 border-b border-[#3d5afe]/10 flex justify-between items-center">
+                        <span className="text-xs text-[#8e8fa2]">Daily AI Limit</span>
+                        <span className={`text-xs font-bold ${remainingLimit > 0 ? 'text-[#bbc3ff]' : 'text-red-400'}`}>
+                            {remainingLimit} / 6 remaining
+                        </span>
+                    </div>
+                )}
+
+                {/* Chat Area */}
+                <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
+                    {messages.map((msg, idx) => (
+                        <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                            <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm font-body leading-relaxed ${
                                 msg.role === 'user' 
-                                    ? 'bg-[#3d5afe] text-white rounded-tr-sm' 
-                                    : 'bg-[#1e293b] text-[#dae2fd] rounded-tl-sm border border-white/5'
+                                    ? 'bg-[#3d5afe] text-white rounded-tr-none' 
+                                    : 'bg-[#1a233a] text-[#bbc3ff] rounded-tl-none border border-white/5'
                             }`}>
-                                <p className="text-sm leading-relaxed">{msg.content}</p>
-                                
-                                {/* Show stats if the message is from AI and contains statistics (usually the first message) */}
-                                {msg.role === 'ai' && msg.stats && msg.stats.wpm > 0 && index === 0 && (
-                                    <div className="mt-3 pt-3 border-t border-white/10 grid grid-cols-2 gap-2 text-xs">
-                                        <div className="bg-black/20 p-2 rounded-lg">
-                                            <span className="text-[#8e8fa2] block mb-1">Best WPM</span>
-                                            <span className="font-bold text-white">{msg.stats.wpm}</span>
-                                        </div>
-                                        <div className="bg-black/20 p-2 rounded-lg">
-                                            <span className="text-[#8e8fa2] block mb-1">Accuracy</span>
-                                            <span className="font-bold text-white">{msg.stats.accuracy}%</span>
-                                        </div>
-                                    </div>
-                                )}
+                                {msg.content}
                             </div>
                         </div>
                     ))}
                     {isLoading && (
                         <div className="flex justify-start">
-                            <div className="bg-[#1e293b] p-3 rounded-2xl rounded-tl-sm border border-white/5">
-                                <span className="material-symbols-outlined animate-spin text-[#3d5afe]">sync</span>
+                            <div className="bg-[#1a233a] text-[#bbc3ff] rounded-2xl rounded-tl-none px-4 py-3 border border-white/5 flex gap-1">
+                                <span className="w-2 h-2 rounded-full bg-[#3d5afe] animate-bounce"></span>
+                                <span className="w-2 h-2 rounded-full bg-[#3d5afe] animate-bounce" style={{ animationDelay: '0.2s' }}></span>
+                                <span className="w-2 h-2 rounded-full bg-[#3d5afe] animate-bounce" style={{ animationDelay: '0.4s' }}></span>
                             </div>
                         </div>
                     )}
@@ -137,13 +155,13 @@ export default function AiChatModal({ isOpen, onClose, auth }) {
                             type="text"
                             value={inputQuestion}
                             onChange={(e) => setInputQuestion(e.target.value)}
-                            placeholder="Ask for typing tips..."
-                            className="flex-1 bg-[#0b1326] text-white border border-white/10 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-[#3d5afe]/50 transition-colors"
-                            disabled={isLoading}
+                            placeholder={auth?.user ? "Ask for typing tips..." : "Log in to ask questions..."}
+                            className="flex-1 bg-[#0b1326] text-white border border-white/10 rounded-xl px-4 py-2 text-sm focus:outline-none focus:border-[#3d5afe]/50 transition-colors disabled:opacity-50"
+                            disabled={isLoading || !auth?.user} // Na-disable kapag hindi logged in
                         />
                         <button 
                             type="submit" 
-                            disabled={isLoading || !inputQuestion.trim()}
+                            disabled={isLoading || !inputQuestion.trim() || !auth?.user}
                             className="bg-[#3d5afe] text-white p-2 w-10 h-10 rounded-xl flex items-center justify-center hover:bg-[#3d5afe]/80 disabled:opacity-50 transition-colors"
                         >
                             <span className="material-symbols-outlined text-sm">send</span>
