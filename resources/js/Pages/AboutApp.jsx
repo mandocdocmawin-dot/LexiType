@@ -1,72 +1,73 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Head } from '@inertiajs/react';
 import Navbar from '@/Components/Navbar';
+import Feedback from '@/Components/Feedback'; 
+import AiChatModal from '@/Components/AiChatModal'; 
 
 export default function AboutApp({ auth }) {
+    // --- MODAL STATES ---
+    const [isFeedbackModalOpen, setIsFeedbackModalOpen] = useState(false);
+    const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+
+    // --- HANDLERS ---
+    const handleFeedbackClick = () => {
+        if (auth?.user) {
+            setIsFeedbackModalOpen(true);
+        } else {
+            alert('You are required to sign in to submit feedback.');
+        }
+    };
+
+    const handleAiClick = () => {
+        if (auth?.user) {
+            setIsAiModalOpen(true);
+        } else {
+            alert('You are required to sign in to use the AI Coach.');
+        }
+    };
+
     return (
         <>
-        <Head title="About">
-                        <link rel="preconnect" href="https://fonts.googleapis.com" />
-                        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-                        <link 
-                            href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" 
-                            rel="stylesheet" 
-                        />
-                        <link 
-                            href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" 
-                            rel="stylesheet" 
-                        />
-                    </Head>
-        
-                    {/* Custom Styles Injection */}
-                    <style dangerouslySetInnerHTML={{
-                        __html: `
-                            .material-symbols-outlined {
-                                font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-                            }
-                            .caret-custom {
-                                width: 2px;
-                                height: 1.5rem;
-                                background-color: #bbc3ff;
-                                box-shadow: 0 0 8px #3d5afe;
-                                display: inline-block;
-                                vertical-align: middle;
-                            }
-                        `
-                    }} />
+            <Head title="About">
+                <link rel="preconnect" href="https://fonts.googleapis.com" />
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+                <link 
+                    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" 
+                    rel="stylesheet" 
+                />
+                <link 
+                    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" 
+                    rel="stylesheet" 
+                />
+            </Head>
 
-            <div className="min-h-screen bg-[#0a0f1c] text-slate-200 font-sans selection:bg-[#3d5afe] selection:text-white dark relative overflow-x-hidden">
-                {/* Ito ang Navbar natin na may mga icons */}
-                <Navbar auth={auth} />
+            {/* Custom Styles Injection */}
+            <style dangerouslySetInnerHTML={{
+                __html: `
+                    .material-symbols-outlined {
+                        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+                    }
+                    .caret-custom {
+                        width: 2px;
+                        height: 1.5rem;
+                        background-color: #bbc3ff;
+                    }
+                `
+            }} />
 
-                <main className="max-w-4xl mx-auto pt-32 px-6 pb-20 relative z-10">
-                    <h1 className="text-4xl md:text-5xl font-bold mb-8 text-white tracking-tight">
-                        Tungkol sa LexiType
-                    </h1>
-                    
-                    <div className="space-y-8 text-lg leading-relaxed text-slate-400">
-                        <section className="space-y-4">
-                            <p>
-                                Ang LexiType ay idinisenyo para sa mga minimalist at mahilig sa high-performance typing. 
-                                Layunin namin na magbigay ng maayos na karanasan sa pag-eensayo ng bilis at accuracy sa pagtitipa.
-                            </p>
-                            <p>
-                                Naniniwala kami na ang keyboard ay hindi lamang isang tool, kundi isang extension ng iyong isipan. 
-                                Sa pamamagitan ng LexiType, mas mapapabilis ang daloy ng iyong mga ideya mula sa utak patungo sa screen.
-                            </p>
-                        </section>
+            <div className="min-h-screen bg-[#060e20] text-[#8e8fa2] font-body flex flex-col relative overflow-hidden">
+                {/* Ipinasa natin ang handler sa Navbar kung sakaling nandoon ang Feedback button */}
+                <Navbar auth={auth} onFeedbackClick={handleFeedbackClick} />
+
+                <main className="flex-1 flex flex-col items-center pt-24 pb-12 px-4 md:px-8 z-10">
+                    <div className="w-full max-w-4xl">
                         
-                        <div className="bg-[#131b2e] p-8 rounded-3xl border border-slate-800 shadow-2xl relative overflow-hidden group">
-                            {/* Kumuha tayo ng idea sa Welcome.jsx: Naglagay ako ng subtle glow effect dito! */}
-                            <div className="absolute -top-24 -right-24 w-64 h-64 bg-[#3d5afe]/10 blur-[80px] rounded-full pointer-events-none transition-all duration-700 group-hover:bg-[#3d5afe]/20"></div>
-
-                            <h2 className="text-2xl font-bold text-[#bbc3ff] mb-4 relative z-10 flex items-center gap-3">
-                                <span className="material-symbols-outlined">rocket_launch</span>
-                                Ang Aming Misyon
-                            </h2>
-                            <p className="text-slate-300 relative z-10">
-                                Magbigay ng modernong tools na makakatulong sa mga developers, writers, at kahit sinong gumagamit ng computer na maging mas produktibo 
-                                sa pamamagitan ng mastery sa kanilang keyboard.
+                        <div className="text-center mb-16">
+                            <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 tracking-tight">
+                                About <span className="text-[#bbc3ff]">LexiType</span>
+                            </h1>
+                            <p className="text-lg text-[#8e8fa2] max-w-2xl mx-auto">
+                                Elevate your typing experience with AI-powered feedback and detailed analytics.
                             </p>
                         </div>
 
@@ -86,9 +87,50 @@ export default function AboutApp({ auth }) {
                                 <p className="text-sm">Subaybayan ang iyong WPM, accuracy, at consistency sa bawat session.</p>
                             </div>
                         </section>
+
                     </div>
                 </main>
+
+                {/* --- FLOATING AI BUTTON --- */}
+                <div className={`fixed bottom-8 right-8 z-50 group transition-opacity duration-500 opacity-100`}>
+                    <div className="absolute bottom-full right-0 mb-4 w-64 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 pointer-events-none">
+                        <div className="bg-[#131b2e]/90 backdrop-blur-xl p-4 rounded-xl shadow-[0px_20px_40px_rgba(6,14,32,0.4)] border border-white/10">
+                            {auth?.user ? (
+                                <>
+                                    <p className="text-sm font-medium text-white mb-1">Chat with LexiType!</p>
+                                    <p className="text-xs text-[#8e8fa2]">Ask your AI coach for personalized typing tips and feedback.</p>
+                                </>
+                            ) : (
+                                <>
+                                    <p className="text-sm font-medium text-white mb-1">Log in to chat with your AI Coach!</p>
+                                    <p className="text-xs text-[#8e8fa2]">Get personalized feedback on your typing cadence and posture.</p>
+                                </>
+                            )}
+                        </div>
+                        <div className="w-3 h-3 bg-[#131b2e]/90 rotate-45 absolute -bottom-1.5 right-6 border-r border-b border-white/10"></div>
+                    </div>
+                    
+                    <div onClick={handleAiClick} className="bg-[#131b2e]/70 backdrop-blur-xl rounded-xl w-16 h-16 shadow-[0px_20px_40px_rgba(6,14,32,0.4)] flex items-center justify-center cursor-pointer hover:scale-110 transition-transform duration-300">
+                        <div className="flex flex-col items-center justify-center text-slate-400">
+                            <span className="material-symbols-outlined text-2xl">auto_awesome</span>
+                            <span className="text-[10px] font-semibold font-body tracking-wider mt-1">LexiType</span>
+                        </div>
+                    </div>
+                </div>
+
             </div>
+
+            {/* --- MODAL COMPONENTS --- */}
+            <Feedback 
+                isOpen={isFeedbackModalOpen} 
+                onClose={() => setIsFeedbackModalOpen(false)} 
+            />
+
+            <AiChatModal 
+                isOpen={isAiModalOpen} 
+                onClose={() => setIsAiModalOpen(false)} 
+                auth={auth} 
+            />
         </>
     );
 }

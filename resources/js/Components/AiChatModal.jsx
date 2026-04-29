@@ -33,7 +33,7 @@ export default function AiChatModal({ isOpen, onClose, auth }) {
         }
 
         try {
-            const response = await axios.post('/api/ai-analysis', {
+            const response = await axios.post('/ai-analysis', {
                 question: question
             });
 

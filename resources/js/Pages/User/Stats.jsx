@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import Navbar from '@/Components/Navbar';
 import Feedback from '@/Components/Feedback';
+import AiChatModal from '@/Components/AiChatModal';
 
 export default function Stats({ 
     auth, 
@@ -23,6 +24,17 @@ export default function Stats({
             setIsFeedbackModalOpen(true);
         } else {
             alert('You are required to sign in to submit feedback.');
+        }
+    };
+
+    // --- AI CHAT MODAL STATE (IDAGDAG ITO) ---  
+    const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+
+    const handleAiClick = () => {
+        if (auth?.user) {
+            setIsAiModalOpen(true);
+        } else {
+            alert('You are required to sign in to use the AI Coach.');
         }
     };
 
@@ -350,16 +362,27 @@ export default function Stats({
                         </button>
                     </div>
 
-                    {/* Right Floating Button: AI Coach (Status logic removed so it's always visible) */}
-                    <div className="fixed bottom-8 right-8 z-50 group transition-opacity duration-500 opacity-100">
+                   {/* Floating AI Button sa Stats */}
+                    <div className={`fixed bottom-8 right-8 z-50 group transition-opacity duration-500 opacity-100`}>
                         <div className="absolute bottom-full right-0 mb-4 w-64 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 pointer-events-none">
                             <div className="bg-[#131b2e]/90 backdrop-blur-xl p-4 rounded-xl shadow-[0px_20px_40px_rgba(6,14,32,0.4)] border border-white/10">
-                                <p className="text-sm font-medium text-white mb-1">Log in to chat with your AI Coach!</p>
-                                <p className="text-xs text-[#8e8fa2]">Get personalized feedback on your typing cadence and posture.</p>
+                                {/* --- CONDITIONAL TEXT --- */}
+                                {auth?.user ? (
+                                    <>
+                                        <p className="text-sm font-medium text-white mb-1">Chat with LexiType!</p>
+                                        <p className="text-xs text-[#8e8fa2]">Ask your AI coach for personalized typing tips and feedback.</p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <p className="text-sm font-medium text-white mb-1">Log in to chat with your AI Coach!</p>
+                                        <p className="text-xs text-[#8e8fa2]">Get personalized feedback on your typing cadence and posture.</p>
+                                    </>
+                                )}
                             </div>
                             <div className="w-3 h-3 bg-[#131b2e]/90 rotate-45 absolute -bottom-1.5 right-6 border-r border-b border-white/10"></div>
                         </div>
-                        <div className="bg-[#131b2e]/70 backdrop-blur-xl rounded-xl w-16 h-16 shadow-[0px_20px_40px_rgba(6,14,32,0.4)] flex items-center justify-center cursor-pointer hover:scale-110 transition-transform duration-300">
+                        {/* Idinagdag natin ang onClick={handleAiClick} dito */}
+                        <div onClick={handleAiClick} className="bg-[#131b2e]/70 backdrop-blur-xl rounded-xl w-16 h-16 shadow-[0px_20px_40px_rgba(6,14,32,0.4)] flex items-center justify-center cursor-pointer hover:scale-110 transition-transform duration-300">
                             <div className="flex flex-col items-center justify-center text-slate-400">
                                 <span className="material-symbols-outlined text-2xl">auto_awesome</span>
                                 <span className="text-[10px] font-semibold font-body tracking-wider mt-1">LexiType</span>
@@ -373,6 +396,11 @@ export default function Stats({
             <Feedback 
                 isOpen={isFeedbackModalOpen} 
                 onClose={() => setIsFeedbackModalOpen(false)} 
+            />
+            <AiChatModal 
+                isOpen={isAiModalOpen} 
+                onClose={() => setIsAiModalOpen(false)} 
+                auth={auth} 
             />
         </>
     );

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\TypingSession;
+use App\Models\keystrokeMistake;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
@@ -19,14 +20,33 @@ class AIAnalysisController extends Controller
             return response()->json(['error' => 'Unauthorized'], 401);
         }
 
-        // --- 1. DAILY LIMIT LOGIC ---
-        $dailyLimit = 5;
+        $dailyLimit = 6;
         $cacheKey = 'ai_chat_count_user_' . $user->id; 
         $requestsToday = Cache::get($cacheKey, 0); 
 
         $bestWpm = TypingSession::where('user_id', $user->id)->max('wpm_score') ?? 0;
         $avgAccuracy = TypingSession::where('user_id', $user->id)->avg('accuracy_percentage') ?? 100;
-        $focusLetters = "None yet"; 
+        
+        $recentSessionIds = TypingSession::where('user_id', $user->id)
+            ->orderBy('created_at', 'desc')
+            ->take(20)
+            ->pluck('id');
+
+        $mistakes = keystrokeMistake::whereIn('typing_session_id', $recentSessionIds)->get();
+
+        if ($mistakes->isEmpty()) {
+            $focusLetters = "None yet";
+        } else {
+            $topMistakes = $mistakes->groupBy(function ($m) {
+                $char = $m->expected_character;
+                $char = ($char === null || trim($char) === '') ? 'Space' : $char;
+                return strtoupper($char);
+            })->sortByDesc(function ($group) {
+                return $group->count();
+            })->take(5)->keys()->implode(', ');
+
+            $focusLetters = $topMistakes;
+        }
 
         if ($requestsToday >= $dailyLimit) {
             return response()->json([
@@ -38,22 +58,34 @@ class AIAnalysisController extends Controller
             ]);
         }
 
-        // --- 2. SETUP THE PROMPT FOR GEMINI ---
         $userQuestion = $request->input('question');
-        $prompt = "You are an AI typing coach named LexiType. User Best WPM: {$bestWpm}, Accuracy: {$avgAccuracy}%. Keep answers short (1-3 sentences). IMPORTANT: You must reply in Tagalog or conversational Taglish.";
+        
+        $prompt = "You are an AI typing coach named LexiType. User Best WPM: {$bestWpm}, Accuracy: {$avgAccuracy}%. The user's most frequent typing mistakes are: {$focusLetters}. Keep answers short (1-3 sentences). IMPORTANT: Detect the user's language. If the user writes in English, reply in strict English. If the user writes in Tagalog, reply in strict Tagalog. Do not use Taglish unless the user explicitly asks you to do so.";
         
         if ($userQuestion) {
-            $prompt .= "User question: '{$userQuestion}'.";
+            $prompt .= " User question: '{$userQuestion}'. If the user asks about their mistakes or weaknesses, mention their weakest keys ({$focusLetters}) and provide a specific tip to improve them.";
         } else {
-            $prompt .= "Give a short, encouraging typing tip.";
+            $prompt .= " Give a short, encouraging typing tip focused on improving their weakest keys ({$focusLetters}).";
         }
 
-        // --- 3. SEND REQUEST TO GEMINI API ---
         $apiKey = env('GEMINI_API_KEY');
+
+        if (app()->environment('local')) {
+            $preview = 'NULL';
+            if ($apiKey) {
+                $len = strlen($apiKey);
+                if ($len <= 8) {
+                    $preview = substr($apiKey, 0, 2) . str_repeat('*', max(0, $len - 4)) . substr($apiKey, -2);
+                } else {
+                    $preview = substr($apiKey, 0, 4) . str_repeat('*', max(0, $len - 8)) . substr($apiKey, -4);
+                }
+            }
+            Log::info('Gemini API key preview', ['preview' => $preview]);
+        }
+
         $aiMessage = "Keep practicing! I need more data to analyze your typing."; 
 
         try {
-            // prefer current v1 endpoint and a supported model; change model if you want a different tier
             $modelUrl = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={$apiKey}";
             Log::info('Gemini request', ['url' => $modelUrl]);
 
@@ -81,7 +113,6 @@ class AIAnalysisController extends Controller
             $aiMessage = "Sorry, there was a system connection error. Please try again later.";
         }
 
-        // --- 4. RETURN RESPONSE TO REACT FRONTEND ---
         return response()->json([
             'message' => $aiMessage,
             'best_wpm' => $bestWpm,

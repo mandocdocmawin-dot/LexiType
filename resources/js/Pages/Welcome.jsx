@@ -731,8 +731,18 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                <div className={`fixed bottom-8 right-8 z-50 group transition-opacity duration-500 ${status === 'typing' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
                     <div className="absolute bottom-full right-0 mb-4 w-64 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 pointer-events-none">
                         <div className="bg-[#131b2e]/90 backdrop-blur-xl p-4 rounded-xl shadow-[0px_20px_40px_rgba(6,14,32,0.4)] border border-white/10">
-                            <p className="text-sm font-medium text-white mb-1">Log in to chat with your AI Coach!</p>
-                            <p className="text-xs text-[#8e8fa2]">Get personalized feedback on your typing cadence and posture.</p>
+                            {/* --- CONDITIONAL TEXT BASED ON LOGIN STATUS --- */}
+                            {auth?.user ? (
+                                <>
+                                    <p className="text-sm font-medium text-white mb-1">Chat with LexiType!</p>
+                                    <p className="text-xs text-[#8e8fa2]">Ask your AI coach for personalized typing tips and feedback.</p>
+                                </>
+                            ) : (
+                                <>
+                                    <p className="text-sm font-medium text-white mb-1">Log in to chat with your AI Coach!</p>
+                                    <p className="text-xs text-[#8e8fa2]">Get personalized feedback on your typing cadence and posture.</p>
+                                </>
+                            )}
                         </div>
                         <div className="w-3 h-3 bg-[#131b2e]/90 rotate-45 absolute -bottom-1.5 right-6 border-r border-b border-white/10"></div>
                     </div>
