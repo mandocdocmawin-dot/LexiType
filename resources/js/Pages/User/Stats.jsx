@@ -244,22 +244,28 @@ export default function Stats({
                             <div>
                                 <h3 className="font-headline text-xl font-semibold mb-6">Trouble Clusters</h3>
                                 <div className="space-y-6">
-                                    {troubleClusters && troubleClusters.length > 0 ? troubleClusters.map((cluster, idx) => (
-                                        <div key={cluster.key} className="flex items-center gap-4">
-                                            <div className={`w-12 h-12 flex items-center justify-center rounded-xl font-headline font-bold text-2xl ${idx === 2 ? 'bg-tertiary/10 text-on-tertiary-container' : 'bg-tertiary/20 text-tertiary'}`}>
-                                                {cluster.key}
-                                            </div>
-                                            <div className="flex-1">
-                                                <div className="flex justify-between items-end mb-1">
-                                                    <span className="text-xs font-bold text-on-surface uppercase tracking-wider">Lag Factor</span>
-                                                    <span className={`text-xs font-bold ${idx === 2 ? 'text-on-tertiary-container' : 'text-tertiary'}`}>{cluster.lag}ms</span>
+                                    {troubleClusters && troubleClusters.length > 0 ? (
+                                        // --- THE FIX IS HERE ---
+                                        // Gumawa tayo ng kopya gamit ang spread operator [...], tapos sinort pababa (descending) bago i-map.
+                                        [...troubleClusters]
+                                            .sort((a, b) => b.lag - a.lag)
+                                            .map((cluster, idx) => (
+                                                <div key={cluster.key} className="flex items-center gap-4">
+                                                    <div className={`w-12 h-12 flex items-center justify-center rounded-xl font-headline font-bold text-2xl ${idx === 2 ? 'bg-tertiary/10 text-on-tertiary-container' : 'bg-tertiary/20 text-tertiary'}`}>
+                                                        {cluster.key}
+                                                    </div>
+                                                    <div className="flex-1">
+                                                        <div className="flex justify-between items-end mb-1">
+                                                            <span className="text-xs font-bold text-on-surface uppercase tracking-wider">Lag Factor</span>
+                                                            <span className={`text-xs font-bold ${idx === 2 ? 'text-on-tertiary-container' : 'text-tertiary'}`}>{cluster.lag}ms</span>
+                                                        </div>
+                                                        <div className="w-full h-1 bg-surface-container-highest rounded-full overflow-hidden">
+                                                            <div className={`h-full ${idx === 2 ? 'bg-tertiary/50' : 'bg-tertiary'}`} style={{ width: `${cluster.percentage}%` }}></div>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                                <div className="w-full h-1 bg-surface-container-highest rounded-full overflow-hidden">
-                                                    <div className={`h-full ${idx === 2 ? 'bg-tertiary/50' : 'bg-tertiary'}`} style={{ width: `${cluster.percentage}%` }}></div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )) : (
+                                            ))
+                                    ) : (
                                         <p className="text-sm text-on-surface-variant">No typing mistakes tracked yet.</p>
                                     )}
                                 </div>
@@ -268,7 +274,7 @@ export default function Stats({
                                 <p className="text-xs text-on-surface-variant leading-relaxed">
                                     <span className="text-primary font-bold">Coach Tip: </span> 
                                     {troubleClusters && troubleClusters.length > 0 
-                                        ? `Focus heavily on your transition strokes involving '${troubleClusters[0].key}'. Reducing lag here yields the highest WPM gains.` 
+                                        ? `Focus heavily on your transition strokes involving '${[...troubleClusters].sort((a, b) => b.lag - a.lag)[0].key}'. Reducing lag here yields the highest WPM gains.` 
                                         : `Keep practicing! Data points will generate after a few sessions.`}
                                 </p>
                             </div>

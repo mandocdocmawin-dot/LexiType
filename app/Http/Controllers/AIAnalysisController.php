@@ -107,7 +107,12 @@ class AIAnalysisController extends Controller
                 $status = $response->status();
                 $body = $response->body();
                 Log::error("Gemini API Error: status={$status} body={$body}");
-                $aiMessage = "You have reached your limit or there is an issue with the AI.";
+                
+                if ($status === 503) {
+                    $aiMessage = "Masyadong maraming gumagamit sa AI coach ngayon. Pakisubukang muli pagkalipas ng ilang sandali.";
+                } else {
+                    $aiMessage = "You have reached your limit or there is an issue with the AI.";
+                }
             }
 
         } catch (\Exception $e) {

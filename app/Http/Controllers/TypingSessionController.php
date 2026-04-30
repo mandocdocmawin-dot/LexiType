@@ -71,13 +71,12 @@ class TypingSessionController extends Controller
             // 2. Compute ang offset para makuha ang tamang batch ng users
             $offset = ($page - 1) * $limit;
 
-            // Kinukuha lang ang pinakamataas na WPM per user_id at iga-group para walang duplicate
             $topSessions = TypingSession::select('user_id', DB::raw('MAX(wpm_score) as highest_wpm'))
-                ->with('user') // Siguraduhing may public function user() sa iyong TypingSession model
+                ->with('user') 
                 ->groupBy('user_id')
                 ->orderByDesc('highest_wpm')
-                ->skip($offset) // Gamitin ang computed offset
-                ->take($limit)  // Gamitin ang dynamic limit
+                ->skip($offset) 
+                ->take($limit) 
                 ->get();
 
             $formattedLeaderboard = $topSessions->map(function ($session, $index) use ($offset) {

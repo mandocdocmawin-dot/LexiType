@@ -4,6 +4,7 @@ import Navbar from '@/Components/Navbar';
 import axios from 'axios';
 import Feedback from '@/Components/Feedback'; 
 import AiChatModal from '@/Components/AiChatModal';
+import Session from '@/Components/Session';
 
 export default function Welcome({ auth, laravelVersion, phpVersion }) {
     // --- TYPING ENGINE STATES ---
@@ -19,6 +20,10 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
     const [accuracy, setAccuracy] = useState(100);
     const [mistakes, setMistakes] = useState(0);
     const [mistakeDetails, setMistakeDetails] = useState([]);
+
+    // --- STREAK TRACKING STATES ---
+    const [currentStreak, setCurrentStreak] = useState(0);
+    const [maxStreak, setMaxStreak] = useState(0);
 
     // --- NEW STATES FOR CONFIGURATION BAR ---
     const [activeCategory, setActiveCategory] = useState('snippet');
@@ -55,7 +60,6 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
         if (newCategory === 'snippet') dbCategory = 'code_snippets';
         if (newCategory === 'quote') dbCategory = 'quotes';
 
-        // Helper to convert label -> int
         const labelToInt = (label) => {
             if (!label && label !== 0) return null;
             const lower = String(label).toLowerCase();
@@ -67,7 +71,6 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
         };
 
         try {
-            // First ask the backend which difficulties exist for this category
             const diffsResp = await axios.get('/typing-texts/difficulties', {
                 params: { category: dbCategory },
                 withCredentials: true,
@@ -84,7 +87,6 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
 
             const desiredInt = labelToInt(newDifficulty) || parseInt(newDifficulty) || 2;
 
-            // If desired isn't available, pick the closest available difficulty
             let targetDifficulty = desiredInt;
             if (!availableInts.includes(desiredInt)) {
                 let closest = availableInts[0];
@@ -99,10 +101,8 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                 targetDifficulty = closest;
             }
 
-            // Update UI difficulty to reflect what we'll actually request
             setActiveDifficulty(targetDifficulty);
 
-            // Map difficulty -> duration (seconds)
             const diffToSeconds = (di) => {
                 if (di === 1) return 30;
                 if (di === 2) return 60;
@@ -112,7 +112,6 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
             const durationSeconds = diffToSeconds(targetDifficulty);
             setDuration(durationSeconds);
 
-            // Now request a random text using the chosen difficulty
             const response = await axios.get('/typing-texts/random', {
                 params: { category: dbCategory, difficulty_level: targetDifficulty },
                 withCredentials: true,
@@ -126,6 +125,8 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                 setCurrentInput('');
                 setStatus('waiting');
                 setMistakes(0);
+                setCurrentStreak(0);
+                setMaxStreak(0);
                 setTimeLeft(durationSeconds);
             }
         } catch (error) {
@@ -134,7 +135,6 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
         }
     };
 
-    // Cache lists of texts per category+difficulty for deterministic cycling
     const [textsCache, setTextsCache] = useState({});
 
     const uiToDbCategory = (cat) => {
@@ -143,7 +143,6 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
         return 'paragraphs';
     };
 
-    // Cycle to the next text for (category, difficulty). Loops back to first when at the end.
     const cycleGameMode = async (newCategory, newDifficulty) => {
         setActiveCategory(newCategory);
 
@@ -179,7 +178,6 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
         const nextIndex = (cache.index + 1) % len;
         const textObj = cache.list[nextIndex];
 
-        // Update cache index
         setTextsCache(prev => ({ ...prev, [key]: { list: cache.list, index: nextIndex } }));
 
         const diffToSeconds = (di) => {
@@ -199,13 +197,14 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
             setCurrentInput('');
             setStatus('waiting');
             setMistakes(0);
+            setCurrentStreak(0);
+            setMaxStreak(0);
             setTimeLeft(durationSeconds);
         } else {
             alert('Selected text is invalid.');
         }
     };
 
-    // Automatically fetch text on page load
     useEffect(() => {
         changeGameMode('snippet', 2);
     }, []);
@@ -223,7 +222,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
     useEffect(() => { typedWordsRef.current = typedWords; }, [typedWords]);
     useEffect(() => { currentInputRef.current = currentInput; }, [currentInput]);
 
-    // Global Typing Focus (only on explicit activation)
+    // Global Typing Focus
     useEffect(() => {
         const handleGlobalClick = () => {
             if (isFeedbackModalOpen) return;
@@ -244,18 +243,14 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
             const isPrintable = key.length === 1;
             if (!isPrintable) return;
 
-            // If the hidden input already has focus, let its handler deal with the key
             if (document.activeElement === inputRef.current) return;
 
-            // Otherwise, focus the input and manually process the printable character
             if (inputRef.current) {
                 inputRef.current.focus();
                 setShowFocusHint(false);
 
-                // Start the timer if we're waiting
                 if (status === 'waiting') setTimeout(() => setStatus('typing'), 0);
 
-                // Manually append the key into the input state and update mistake tracking
                 const now = Date.now();
                 const timeToPress = now - lastKeystrokeTime.current;
                 lastKeystrokeTime.current = now;
@@ -280,6 +275,16 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                         typed_char: key,
                         time_to_press_ms: timeToPress
                     }]);
+                    
+                    // Reset streak on mistake
+                    setCurrentStreak(0);
+                } else {
+                    // Increment streak on correct keystroke
+                    setCurrentStreak(prev => {
+                        const newStreak = prev + 1;
+                        setMaxStreak(m => Math.max(m, newStreak)); 
+                        return newStreak;
+                    });
                 }
 
                 e.preventDefault();
@@ -313,7 +318,6 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
         const totalTypedChars = typedWords.join('').length + currentInput.length;
         const correctChars = totalTypedChars - mistakes;
         
-        // WPM = (Correct Chars / 5) / (Time Elapsed in Minutes)
         const timeElapsedMin = (duration - timeLeft) / 60;
         const currentWpm = timeElapsedMin > 0 ? Math.round((correctChars / 5) / timeElapsedMin) : 0;
         
@@ -327,14 +331,12 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
     const handleKeyDown = (e) => {
         if (status === 'finished') return;
 
-        // Track when Tab is pressed and prevent default (losing focus)
         if (e.key === 'Tab') {
             e.preventDefault();
             isTabPressed.current = true;
             return;
         }
 
-        // Check if Enter is pressed WHILE Tab is held down
         if (e.key === 'Enter') {
             e.preventDefault(); 
             if (isTabPressed.current) {
@@ -343,8 +345,6 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
             return;
         }
 
-        // Start the timer only when the user types a printable character.
-        // This prevents modifier keys (Alt/Tab/Ctrl/Meta) from accidentally starting the test.
         const isPrintable = e.key && e.key.length === 1;
         if (status === 'waiting' && isPrintable) {
             setStatus('typing');
@@ -353,19 +353,26 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
         const currentWordIndex = typedWords.length;
         const targetWord = words[currentWordIndex];
 
-        // Move to the next word when Space is pressed
         if (e.key === ' ') {
             e.preventDefault(); 
             if (currentInput.trim().length > 0) {
-                // Check for mistakes in the entire word before moving on
                 if (currentInput.trim() !== targetWord) {
                      setMistakes((prev) => prev + Math.abs(targetWord.length - currentInput.trim().length));
+                     
+                     // Reset streak on wrong word completion
+                     setCurrentStreak(0); 
+                } else {
+                     // Word is correct, count the spacebar as a successful keystroke!
+                     setCurrentStreak(prev => {
+                         const newStreak = prev + 1;
+                         setMaxStreak(m => Math.max(m, newStreak));
+                         return newStreak;
+                     });
                 }
                 setTypedWords([...typedWords, currentInput.trim()]);
                 setCurrentInput('');
             }
         } 
-        // Enhanced Backspace Logic
         else if (e.key === 'Backspace') {
             if (currentInput.length > 0) {
                 setCurrentInput(currentInput.slice(0, -1));
@@ -381,14 +388,11 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                 }
             }
         } 
-        // If it's a regular letter, add to input and check immediately for mistakes
         else if (e.key.length === 1) {
-            // Get the elapsed time before this key was pressed
             const now = Date.now();
             const timeToPress = now - lastKeystrokeTime.current;
             lastKeystrokeTime.current = now; 
 
-            // Limit extra characters to targetWord.length + 5
             if (targetWord && currentInput.length >= targetWord.length + 0) {
                 e.preventDefault();
                 return;
@@ -397,51 +401,69 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
             const nextInput = currentInput + e.key;
             setCurrentInput(nextInput);
             
-            // Real-time mistake tracking
             if (targetWord && nextInput[nextInput.length - 1] !== targetWord[nextInput.length - 1]) {
                 setMistakes((prev) => prev + 1); 
                 
-                // NEW LOGIC: Record full details of the mistake
                 setMistakeDetails((prev) => [...prev, {
                     expected_character: targetWord[nextInput.length - 1],
                     typed_char: e.key,
                     time_to_press_ms: timeToPress
                 }]);
+                
+                // Reset streak on mistake
+                setCurrentStreak(0); 
+            } else {
+                // Increment streak on correct character
+                setCurrentStreak(prev => {
+                     const newStreak = prev + 1;
+                     setMaxStreak(m => Math.max(m, newStreak));
+                     return newStreak;
+                });
             }
         }
     };
 
-    // Reset the Tab pressed state when the key is released
     const handleKeyUp = (e) => {
         if (e.key === 'Tab') {
             isTabPressed.current = false;
         }
     };
 
-    // Update stats real-time
     useEffect(() => {
         if (status === 'typing') computeStats();
     }, [currentInput, typedWords, timeLeft]);
 
-
+    // --- LOGIC: FINISH AND SAVE TO DATABASE ---
     // --- LOGIC: FINISH AND SAVE TO DATABASE ---
     const handleFinish = async () => {
         clearInterval(timerRef.current);
+
+        // 1. SYNCHRONOUS FINAL CALCULATION
+        const totalTypedChars = typedWords.join('').length + currentInput.length;
+        const correctChars = totalTypedChars - mistakes;
+        
+        // Ensure time isn't negative, and prevent division by zero if finished instantly
+        const timeElapsedMin = (duration - Math.max(timeLeft, 0)) / 60; 
+        
+        const calculatedWpm = timeElapsedMin > 0 ? Math.round((correctChars / 5) / timeElapsedMin) : 0;
+        const calculatedAcc = totalTypedChars > 0 ? Math.round((correctChars / totalTypedChars) * 100) : 100;
+
+        const finalWpm = calculatedWpm > 0 ? calculatedWpm : 0;
+        const finalAccuracy = calculatedAcc > 0 ? calculatedAcc : 0;
+
+        // 2. LOCK IN THE FINAL UI STATE
+        setWpm(finalWpm);
+        setAccuracy(finalAccuracy);
         setStatus('finished');
 
-        const finalWpm = wpm; 
-        const finalAccuracy = accuracy; 
-
-        // [NEW LOGIC]: Check if Guest. If Guest, silently stop the save process.
         if (!auth.user) {
             return; 
         }
 
-        // If it reaches here, it means a user is logged in. Let's save it!
         try {
-            // Normalize difficulty label to backend convention: 'easy'|'medium'|'hard'
             const difficultyLabel = activeDifficulty === 1 ? 'easy' : (activeDifficulty === 3 ? 'hard' : 'medium');
 
+            // 3. SEND THE EXACT SAME VARIABLES TO THE DATABASE
             const response = await axios.post('/typing-sessions', {
                 wpm_score: finalWpm,
                 accuracy_percentage: finalAccuracy,
@@ -469,10 +491,11 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
             return;
         }
 
-            if (typedWords.length === words.length - 1 && currentInput.trim() === words[words.length - 1]) {
-                handleFinish();
-            }
-        }, [typedWords, currentInput, words, status]);
+        if (typedWords.length === words.length - 1 && currentInput.trim() === words[words.length - 1]) {
+            handleFinish();
+        }
+    }, [typedWords, currentInput, words, status]);
+
     // --- LOGIC: RESTART ---
     const resetTest = () => {
         clearInterval(timerRef.current);
@@ -483,13 +506,50 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
         setWpm(0);
         setAccuracy(100);
         setMistakes(0);
-        setMistakeDetails([]); // Clear the list of mistakes
+        setMistakeDetails([]); 
+        
+        // Reset streaks
+        setCurrentStreak(0);
+        setMaxStreak(0);
+
         setShowFocusHint(true);
-        lastKeystrokeTime.current = Date.now(); // Reset the time tracker
+        lastKeystrokeTime.current = Date.now(); 
         isTabPressed.current = false;
 
         if (inputRef.current) inputRef.current.focus();
     };
+
+    // --- PRE-COMPUTE DYNAMIC SESSION DATA FOR MODAL ---
+    let calculatedTroubleKey = null;
+    let generatedAiInsight = "Waiting for data...";
+    let calculatedMaxStreak = `${maxStreak} keys`; 
+
+    if (status === 'finished') {
+        if (mistakeDetails.length === 0) {
+            calculatedTroubleKey = null;
+            generatedAiInsight = "Flawless execution! Your rhythm was impeccable. <span class='text-[#4edea3] font-medium'>Keep up the perfect accuracy</span> in your next set!";
+        } else {
+            const counts = {};
+            let maxCount = 0;
+
+            mistakeDetails.forEach(m => {
+                const key = m.expected_character;
+                counts[key] = (counts[key] || 0) + 1;
+                if (counts[key] > maxCount) {
+                    maxCount = counts[key];
+                    calculatedTroubleKey = key;
+                }
+            });
+
+            const displayKey = calculatedTroubleKey === ' ' ? 'Spacebar' : `'${calculatedTroubleKey}'`;
+            
+            if (accuracy > 90) {
+                generatedAiInsight = `Great speed, but your error rate spiked slightly on the ${displayKey} key. <span class='text-[#ffb2b7] font-medium'>Focus on striking it dead center</span> to boost your consistency.`;
+            } else {
+                generatedAiInsight = `It looks like the ${displayKey} key tripped you up multiple times. <span class='text-[#ffb2b7] font-medium'>Slow down your pace slightly</span> until your muscle memory locks in that movement.`;
+            }
+        }
+    }
 
     return (
         <>
@@ -593,7 +653,6 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                                     
                                     return (
                                         <span key={wordIdx} className="relative inline-block">
-                                            {/* caret before first char */}
                                             {isCurrentWord && status !== 'finished' && currentInput.length === 0 && (
                                                 <span className="caret-custom inline-block align-middle" aria-hidden="true"></span>
                                             )}
@@ -616,7 +675,6 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                                                 return (
                                                     <React.Fragment key={charIdx}>
                                                         <span className={colorClass}>{char}</span>
-                                                        {/* caret inserted after the character at the current index */}
                                                         {isCurrentWord && status !== 'finished' && charIdx === currentInput.length - 1 && (
                                                             <span className="caret-custom inline-block align-middle" aria-hidden="true"></span>
                                                         )}
@@ -662,60 +720,22 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                     </div>
 
                     {status === 'finished' && (
-                        <div className="fixed inset-0 z-50 bg-[#0b1326]/95 backdrop-blur-xl flex flex-col items-center justify-center p-8">
-                            <div className="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
-                                <div className="space-y-6">
-                                    <h2 className="font-headline text-5xl font-bold tracking-tight">Session Complete.</h2>
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="bg-[#131b2e] p-8 rounded-2xl">
-                                            <p className="text-xs font-semibold text-[#8e8fa2] mb-2 uppercase tracking-widest">Speed</p>
-                                            <p className="font-headline text-6xl font-bold">{wpm}<span className="text-xl font-normal text-[#8e8fa2] ml-2">wpm</span></p>
-                                        </div>
-                                        <div className="bg-[#131b2e] p-8 rounded-2xl">
-                                            <p className="text-xs font-semibold text-[#3d5afe] mb-2 uppercase tracking-widest">Accuracy</p>
-                                            <p className="font-headline text-6xl font-bold">{accuracy}<span className="text-xl font-normal text-[#8e8fa2] ml-2">%</span></p>
-                                        </div>
-                                    </div>
-                                    {!auth?.user && (
-                                        <div className="bg-primary-container p-1 rounded-2xl bg-gradient-to-br from-[#3d5afe] to-[#bbc3ff]">
-                                            <div className="bg-[#0b1326] p-8 rounded-xl">
-                                                <p className="text-lg font-medium mb-4">Sign up to save your stats & unlock AI insights</p>
-                                                <Link href={route('register')} className="block w-full text-center py-4 bg-[#3d5afe] text-white font-bold rounded-lg hover:scale-[1.02] transition-transform">Create Free Account</Link>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                                <div className="relative h-[400px] bg-[#131b2e] rounded-3xl overflow-hidden">
-                                    <img 
-                                        className="w-full h-full object-cover mix-blend-luminosity opacity-40" 
-                                        alt="abstract high-tech visualization" 
-                                        src="https://lh3.googleusercontent.com/aida-public/AB6AXuDJ3vI7yZOcnrrFReCx9pW-6g46iEVApOZhvKXkxrNEsgnR_cYIhF_qqEOYqVXG8KO8hhPgb7FGNtpAYnKPLW_GQMEsX6KZK5aHxvwOangRTbGx6brMKXAuVeyQv_eGobwvour8VNAZha4eRc6siFVpc3dTM_XxI4ZlFR_PaR7zUd3fSp1Eb1geXE1URNViU0GcKihxScWkxDrCinHj5Bd9BORoueew9IfuZ0tbtJzB54h5foVi-8zQc1IFjBsT06Kk6HuCu4P7RnM" 
-                                    />
-                                    <div className="absolute inset-0 flex flex-col justify-end p-8 bg-gradient-to-t from-[#0b1326] to-transparent">
-                                        <p className="font-headline text-2xl font-bold">The AI Coach is waiting.</p>
-                                        <p className="text-[#8e8fa2] mt-2">Analyze your finger heatmaps and cadence bottlenecks.</p>
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="mt-12 flex flex-col items-center gap-3 md:flex-row md:justify-center">
-                                <button 
-                                    onClick={resetTest} 
-                                    className="w-full md:w-auto px-6 py-3 bg-[#3d5afe] text-white font-semibold rounded-lg hover:scale-[1.02] transition-transform"
-                                >
-                                    Restart test
-                                </button>
-                                <button 
-                                    onClick={() => cycleGameMode(activeCategory, activeDifficulty)} 
-                                    className="w-full md:w-auto px-6 py-3 border border-[#3d5afe] text-[#3d5afe] font-semibold rounded-lg hover:bg-[#3d5afe]/10 transition-colors"
-                                >
-                                    Next text
-                                </button>
-                            </div>
-                        </div>
+                        <Session 
+                            wpm={wpm} 
+                            accuracy={accuracy} 
+                            auth={auth} 
+                            resetTest={resetTest} 
+                            cycleGameMode={cycleGameMode} 
+                            activeCategory={activeCategory} 
+                            activeDifficulty={activeDifficulty} 
+                            aiInsightText={generatedAiInsight}
+                            troubleKey={calculatedTroubleKey}
+                            maxStreak={calculatedMaxStreak}
+                        />
                     )}
+
                 </main>
                 
-                {/* --- FLOATING FEEDBACK BUTTON --- */}
                 {auth?.user ? (
                     <div className={`fixed bottom-8 left-8 z-50 transition-opacity duration-500 ${status === 'typing' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
                         <button 
@@ -731,7 +751,6 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                <div className={`fixed bottom-8 right-8 z-50 group transition-opacity duration-500 ${status === 'typing' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
                     <div className="absolute bottom-full right-0 mb-4 w-64 opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 pointer-events-none">
                         <div className="bg-[#131b2e]/90 backdrop-blur-xl p-4 rounded-xl shadow-[0px_20px_40px_rgba(6,14,32,0.4)] border border-white/10">
-                            {/* --- CONDITIONAL TEXT BASED ON LOGIN STATUS --- */}
                             {auth?.user ? (
                                 <>
                                     <p className="text-sm font-medium text-white mb-1">Chat with LexiType!</p>
@@ -746,7 +765,6 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                         </div>
                         <div className="w-3 h-3 bg-[#131b2e]/90 rotate-45 absolute -bottom-1.5 right-6 border-r border-b border-white/10"></div>
                     </div>
-                    {/* DITO NILAGAY ANG onClick={handleAiClick} */}
                     <div onClick={handleAiClick} className="bg-[#131b2e]/70 backdrop-blur-xl rounded-xl w-16 h-16 shadow-[0px_20px_40px_rgba(6,14,32,0.4)] flex items-center justify-center cursor-pointer hover:scale-110 transition-transform duration-300">
                         <div className="flex flex-col items-center justify-center text-slate-400">
                             <span className="material-symbols-outlined text-2xl">auto_awesome</span>
@@ -760,7 +778,6 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
                 </div>
             </div>
 
-            {/* --- RENDER FEEDBACK MODAL --- */}
             <Feedback 
                 isOpen={isFeedbackModalOpen} 
                 onClose={() => setIsFeedbackModalOpen(false)} 
