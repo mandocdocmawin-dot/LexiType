@@ -32,7 +32,7 @@ class DatabaseSeeder extends Seeder
         ]);
 
         // // 2. Gagawa tayo ng 5 Random Users kasama ang LAHAT ng related data nila!
-        User::factory(5)
+        User::factory(25)
         //     ->hasProfile()              // Gagawa ng 1 UserProfile
         //     ->hasStats()                // Gagawa ng 1 UserStat
             ->hasTypingSessions(3)      // Gagawa ng 3 TypingSessions

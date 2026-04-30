@@ -5,6 +5,7 @@ use App\Http\Controllers\TypingSessionController;
 use App\Http\Controllers\SystemTypingTextController;
 use App\Http\Controllers\UserFeedbackController;
 use App\Http\Controllers\AIAnalysisController;
+use App\Http\Controllers\LeaderboardController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -43,9 +44,15 @@ Route::middleware('auth')->group(function () {
     Route::post('/ai-analysis', [AIAnalysisController::class, 'getAnalysis']);
 });
 
+Route::get('/api/leaderboard', [LeaderboardController::class, 'index'])->name('leaderboard.api');
+
 // --- ADMIN ROUTES ---
 Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
     Route::resource('feedback', UserFeedbackController::class)->only(['index', 'destroy']);
+});
+
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
 });
 
 require __DIR__.'/auth.php';

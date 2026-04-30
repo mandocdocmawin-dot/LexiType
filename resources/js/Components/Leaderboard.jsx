@@ -1,219 +1,158 @@
 import React, { useState, useEffect } from 'react';
 
-const Leaderboard = ({ onClose, isLoggedIn = false }) => {
+const Leaderboard = ({ onClose }) => { 
+  // Tinanggal na natin ang isLoggedIn prop
   const [leaderboardData, setLeaderboardData] = useState([]);
+  const [currentUserStats, setCurrentUserStats] = useState(null); 
+  const [isAuthenticated, setIsAuthenticated] = useState(false); // Bagong state para sa Auth
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
-  
-  // Pagination & Infinite Scroll States
-  const [page, setPage] = useState(1);
-  const [isFetchingMore, setIsFetchingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
-  
-  const LIMIT = 10; // Number of items per page
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
       try {
-        if (page === 1) {
-          setIsLoading(true);
-        } else {
-          setIsFetchingMore(true);
-        }
+        setIsLoading(true);
 
-        // Added limit parameter to ensure the backend knows how many items to return
-        const response = await fetch(`/api/leaderboard?page=${page}&limit=${LIMIT}`); 
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch leaderboard data');
-        }
-
+        const response = await fetch(`/api/leaderboard?limit=1000`); 
         const result = await response.json();
         
         if (result.success) {
           const newData = Array.isArray(result.data) ? result.data : result.data.data || [];
-          
-          if (page === 1) {
-            setLeaderboardData(newData);
-          } else {
-            // Append new users to the existing list
-            setLeaderboardData(prevData => [...prevData, ...newData]);
-          }
+          setLeaderboardData(newData);
 
-          // If the API returns fewer items than our limit, we've reached the end
-          if (newData.length < LIMIT) {
-            setHasMore(false);
+          // MAGIC TRICK: Dito natin idede-detect ang Laravel Auth!
+          // Kung kasama ang 'currentUserPosition' sa response, alam natin na logged in siya.
+          if ('currentUserPosition' in result) {
+            setIsAuthenticated(true);
+            setCurrentUserStats(result.currentUserPosition);
+          } else {
+            setIsAuthenticated(false);
           }
-        } else {
-          throw new Error(result.message);
         }
       } catch (err) {
-        setError(err.message);
+        console.error(err.message);
       } finally {
         setIsLoading(false); 
-        setIsFetchingMore(false);
       }
     };
 
     fetchLeaderboard();
-  }, [page]);
-
-  const handleScroll = (e) => {
-    const { scrollTop, clientHeight, scrollHeight } = e.currentTarget;
-    if (scrollHeight - scrollTop <= clientHeight + 30) {
-      if (!isLoading && !isFetchingMore && hasMore) {
-        setPage(prevPage => prevPage + 1);
-      }
-    }
-  };
+  }, []);
 
   return (
-    <div 
-        className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 font-sans"
-        onClick={onClose} 
-    >
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50" onClick={onClose}>
+      {/* Modal Container */}
       <div 
-        className="bg-[#131b2e] w-full max-w-[480px] rounded-2xl border border-slate-700/50 shadow-2xl overflow-hidden flex flex-col relative"
-        onClick={(e) => e.stopPropagation()} 
+        className="bg-[#131b2e] w-full max-w-[480px] rounded-[24px] border border-slate-800 shadow-2xl overflow-hidden flex flex-col relative max-h-[85vh]" 
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* Header Section */}
-        <div className="flex items-center justify-between p-5 border-b border-slate-800/60">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-[#1e2638] rounded-xl flex items-center justify-center shadow-inner border border-white/5">
-              <svg className="w-5 h-5 text-[#9fa8da]" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M5 16L3 5L8.5 10L12 4L15.5 10L21 5L19 16H5ZM19 19C19 19.5523 18.5523 20 18 20H6C5.44772 20 5 19.5523 5 19V18H19V19Z" />
-              </svg>
+        
+        {/* HEADER SECTION */}
+        <div className="p-6 pb-0 shrink-0">
+            <div className="flex justify-between items-start mb-4">
+                <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-[#1c2642] rounded-2xl flex items-center justify-center border border-slate-700">
+                        <span className="text-[#a5b4fc] text-2xl">👑</span>
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-bold text-white tracking-tight">Global Top Scorers</h2>
+                        <p className="text-xs text-slate-400 uppercase tracking-wider">Velocity Pro Elite League</p>
+                    </div>
+                </div>
+                <button onClick={onClose} className="text-slate-500 hover:text-white transition-colors">
+                    <span className="material-symbols-outlined">close</span>
+                </button>
             </div>
-            <div>
-              <h2 className="text-lg font-bold text-white tracking-wide leading-tight">Global Top Scorers</h2>
-              <p className="text-[11px] text-slate-400 font-medium">Velocity Pro Elite League</p>
+
+            {/* Column Labels */}
+            <div className="flex justify-between items-center px-2 py-3 border-t border-slate-800/50 text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                <span className="w-12">Rank</span>
+                <span className="flex-1 ml-4">User</span>
+                <span>WPM Velocity</span>
             </div>
-          </div>
-          
-          <button 
-            onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full bg-white/5 text-slate-400 hover:text-white hover:bg-white/10 transition-colors"
-          >
-             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-             </svg>
-          </button>
         </div>
 
-        {/* Table Column Headers */}
-        <div className="grid grid-cols-[40px_1fr_90px] px-6 py-2.5 text-[9px] font-bold tracking-widest text-slate-500 uppercase bg-[#0f1524]/50">
-          <div className="text-center">RANK</div>
-          <div className="pl-2">USER</div>
-          <div className="text-right">WPM VELOCITY</div>
+        {/* SCROLLABLE LIST SECTION (With custom matching scrollbar) */}
+        <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-2 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-600 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-slate-500 pr-2">
+            {isLoading ? (
+                <div className="text-center py-6 text-[#a5b4fc] text-xs font-bold tracking-widest uppercase animate-pulse">
+                    Loading Leaderboard...
+                </div>
+            ) : (
+                leaderboardData.map((user, index) => (
+                    <div key={user.id || index} className="flex items-center justify-between bg-[#182136]/50 p-3 px-4 rounded-2xl border border-slate-700/30">
+                        <div className="flex items-center gap-4 flex-1">
+                            <span className={`font-bold w-6 ${index < 3 ? 'text-[#a5b4fc]' : 'text-slate-500'}`}>#{index + 1}</span>
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-slate-700 overflow-hidden border border-slate-600">
+                                    <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.user}`} alt="avatar" />
+                                </div>
+                                <span className="text-slate-200 font-medium text-sm">{user.user}</span>
+                            </div>
+                        </div>
+                        <span className="text-lg font-black text-[#4edea3]">{user.score}</span>
+                    </div>
+                ))
+            )}
         </div>
 
-        {/* Dynamic List Area with Infinite Scroll */}
-        <div 
-          className="flex flex-col pt-1 pb-2 max-h-[320px] overflow-y-auto [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-slate-700/60 hover:[&::-webkit-scrollbar-thumb]:bg-slate-600 [&::-webkit-scrollbar-thumb]:rounded-full transition-colors"
-          onScroll={handleScroll}
-        >
-          {isLoading && page === 1 && (
-            <div className="text-center text-slate-400 py-10 text-sm flex flex-col items-center gap-2">
-              <svg className="animate-spin h-5 w-5 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              <span>Connecting to leaderboards...</span>
-            </div>
-          )}
-
-          {error && page === 1 && (
-            <div className="text-center text-red-400 py-10 text-sm">Error: {error}</div>
-          )}
-
-          {!isLoading && !error && leaderboardData.length === 0 && (
-            <div className="text-center text-slate-500 py-10 text-sm">No records found yet. Be the first!</div>
-          )}
-
-          {!isLoading && !error && leaderboardData.map((item, idx) => {
-            // Calculate global rank dynamically if backend doesn't provide it
-            const globalRank = item.rank || String(idx + 1).padStart(2, '0');
+        {/* --- STICKY FOOTER SECTION --- */}
+        {/* Pinalitan natin ang isLoggedIn ng isAuthenticated */}
+        {isAuthenticated && (
+          <div className="relative bg-[#202940] px-6 py-5 shrink-0 z-10 border-t border-slate-700/50 shadow-[0_-10px_30px_rgba(0,0,0,0.4)]">
             
-            return (
-              <div 
-                key={item.user_id || idx} 
-                className="grid grid-cols-[40px_1fr_90px] items-center px-6 py-2 hover:bg-white/[0.03] transition-colors cursor-pointer group"
-              >
-                <div className={`text-sm font-bold text-center ${item.rankColor || 'text-slate-500'}`}>
-                  {globalRank}
-                </div>
-                
-                <div className="flex items-center gap-3 pl-2">
-                  {item.hasAvatar ? (
-                    <div className={`w-7 h-7 rounded-full bg-slate-700 overflow-hidden ring-1 ${item.avatarRing || 'ring-slate-600'}`}>
-                      <img src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${item.user}`} alt={item.user} className="w-full h-full object-cover" />
-                    </div>
-                  ) : (
-                    <div className="w-7 h-7 rounded-full bg-[#22283d] flex items-center justify-center text-[10px] font-bold text-slate-400 ring-1 ring-slate-700">
-                      {item.initials || (item.user ? item.user.substring(0, 2).toUpperCase() : '')}
-                    </div>
-                  )}
-                  <span className="text-slate-200 font-semibold text-sm group-hover:text-white transition-colors">{item.user}</span>
-                </div>
-                
-                <div className="text-right text-sm font-bold text-white tracking-wide">
-                  {item.score}
-                </div>
-              </div>
-            );
-          })}
-
-          {/* Loading more indicator */}
-          {isFetchingMore && hasMore && (
-            <div className="text-center py-4 flex items-center justify-center gap-2 text-slate-500 text-xs font-semibold">
-              <svg className="animate-spin h-3.5 w-3.5 text-slate-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              <span>Loading more...</span>
-            </div>
-          )}
-
-          {/* End of list text */}
-          {!hasMore && leaderboardData.length > 0 && (
-            <div className="text-center py-4">
-              <span className="text-[10px] font-bold tracking-widest text-slate-500 uppercase">
-                End of Leaderboard
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Conditional Footer Section ("Your Position") based on isLoggedIn */}
-        {isLoggedIn && (
-          <div className="relative bg-[#182136] px-6 py-4 border-t border-slate-700/60 mt-auto">
-            {/* ... Existing Footer Code ... */}
-            <div className="absolute -top-2.5 left-1/2 -translate-x-1/2">
-              <span className="bg-[#a5b4fc] text-[#131b2e] text-[9px] font-extrabold tracking-widest px-3 py-1 rounded-full uppercase shadow-lg border border-[#c7d2fe]/20">
-                YOUR POSITION
+            {/* Overlapping Pill Badge */}
+            <div className="absolute -top-[14px] left-1/2 -translate-x-1/2">
+              <span className="bg-[#c7d2fe] text-[#131b2e] text-[10px] font-bold tracking-widest px-4 py-1.5 rounded-full uppercase shadow-md">
+                Your Position
               </span>
             </div>
 
-            <div className="grid grid-cols-[40px_1fr_90px] items-center pt-2">
-              <div className="text-base font-bold text-slate-400 text-center">
-                #142
-              </div>
-              
-              <div className="flex items-center gap-3 pl-2">
-                <div className="w-9 h-9 rounded-full bg-slate-700 overflow-hidden ring-2 ring-[#a5b4fc]/30 shadow-lg">
-                  <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=FlowState" alt="FlowState_User" className="w-full h-full object-cover" />
+            {currentUserStats ? (
+              <div className="flex justify-between items-center pt-1">
+                
+                {/* Left Side: Rank and User Info */}
+                <div className="flex items-center gap-6">
+                    {/* Rank Number */}
+                    <div className="text-2xl font-bold text-[#c7d2fe] w-12">
+                      #{currentUserStats.rank}
+                    </div>
+                    
+                    {/* Avatar & Username */}
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-[14px] bg-[#131b2e] p-0.5 border-2 border-[#a5b4fc]/70 overflow-hidden flex items-center justify-center">
+                        <img 
+                          src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUserStats.user}`} 
+                          alt="avatar" 
+                          className="w-full h-full object-cover rounded-xl" 
+                        />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-white font-bold text-[15px] tracking-wide leading-tight">
+                          {currentUserStats.user}
+                        </span>
+                        <span className="text-[10px] font-bold tracking-widest text-[#a5b4fc]/70 uppercase mt-1">
+                          Personal Best
+                        </span>
+                      </div>
+                    </div>
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-white font-bold text-sm tracking-wide">FlowState_User</span>
-                  <span className="text-[9px] font-bold tracking-widest text-slate-400 mt-0.5 uppercase">Personal Best</span>
+                
+                {/* Right Side: Score */}
+                <div className="flex flex-col items-end">
+                  <div className="text-4xl font-black text-[#f1f5f9] leading-none tabular-nums tracking-tight">
+                    {currentUserStats.score}
+                  </div>
+                  <div className="text-[10px] font-bold tracking-widest text-slate-400 uppercase mt-1.5">
+                    AVG WPM
+                  </div>
                 </div>
+                
               </div>
-              
-              <div className="text-right flex flex-col items-end justify-center">
-                <span className="text-2xl font-black text-[#a5b4fc] leading-none">124</span>
-                <span className="text-[8px] font-bold tracking-widest text-slate-400 uppercase mt-1">MAX WPM</span>
-              </div>
-            </div>
+            ) : (
+               <div className="text-center py-4 text-slate-500 text-xs font-bold uppercase tracking-widest">
+                  No stats recorded yet. Play a session!
+               </div>
+            )}
           </div>
         )}
 
