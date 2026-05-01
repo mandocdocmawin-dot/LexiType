@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import Leaderboard from './Leaderboard';
 import AboutModal from './AboutApp';
+import Dropdown from '@/Components/Dropdown'; // Imported Dropdown component
 
 export default function Navbar({ auth }) {
     const { url } = usePage();
     
-    // 1. Initialize states for modals
+    // Initialize states for modals
     const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
     const [isAboutOpen, setIsAboutOpen] = useState(false);
 
@@ -20,7 +21,7 @@ export default function Navbar({ auth }) {
         <>
             <header className="bg-[#131b2e] text-slate-400 font-medium flex justify-between items-center w-full px-6 md:px-12 h-20 max-w-[1920px] mx-auto fixed top-0 left-0 right-0 z-40">
                 <div className="flex items-center gap-12">
-                    {/* Updated Logo Link: Removed hover:opacity-80 transition-opacity */}
+                    {/* Logo Link */}
                     <Link href="/" className="flex items-center gap-3 cursor-pointer">
                         <img src="/img/logo.png" alt="Lexitype Logo" className="h-12 w-auto" />
                         
@@ -31,10 +32,8 @@ export default function Navbar({ auth }) {
                     
                     {auth?.user ? (
                         <nav className="hidden md:flex items-center gap-8 text-sm font-semibold tracking-wide">
-                            {/* Added Home link for all authenticated users */}
                             <Link href="/" className={navLinkClasses('/')}>Home</Link>
                             
-                            {/* Renamed to Overview and restricted to Admins only */}
                             {auth.user.role === 'admin' && (
                                 <Link href="/dashboard" className={navLinkClasses('/dashboard')}>Overview</Link>
                             )}
@@ -64,10 +63,9 @@ export default function Navbar({ auth }) {
                         {/* Leaderboard Button with Tooltip */}
                         <button 
                             onClick={() => setIsLeaderboardOpen(true)}
-                            className="group relative p-2 text-slate-400 hover:text-white transition-colors"
+                            className="group relative p-2 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-[#222a3d]/30 transition-all focus:outline-none"
                         >
                             <span className="material-symbols-outlined">emoji_events</span>
-                            {/* Leaderboard Tooltip element */}
                             <span className="absolute top-full left-1/2 -translate-x-1/2 mt-1 px-2 py-1 bg-[#222a3d] text-xs text-slate-200 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
                                 Leaderboard
                             </span>
@@ -84,7 +82,6 @@ export default function Navbar({ auth }) {
                                 }`}
                             >
                                 <span className="material-symbols-outlined">query_stats</span>
-                                {/* Stats Tooltip element */}
                                 <span className="absolute top-full left-1/2 -translate-x-1/2 mt-1 px-2 py-1 bg-[#222a3d] text-xs text-slate-200 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
                                     Stats
                                 </span>
@@ -93,14 +90,39 @@ export default function Navbar({ auth }) {
                     </div>
 
                     {auth?.user ? (
-                        <Link
-                            href={route('logout')}
-                            method="post"
-                            as="button"
-                            className="px-5 py-2 text-sm font-semibold text-primary hover:text-white transition-all"
-                        >
-                            Log Out
-                        </Link>
+                        /* Account Dropdown for Authenticated Users */
+                        <Dropdown>
+                            <Dropdown.Trigger>
+                                <button className="group relative p-2 text-slate-400 hover:text-white transition-colors flex items-center justify-center">
+                                    <span className="material-symbols-outlined">account_circle</span>
+                                    {/* Tooltip */}
+                                    <span className="absolute top-full left-1/2 -translate-x-1/2 mt-1 px-2 py-1 bg-[#222a3d] text-xs text-slate-200 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                        Account
+                                    </span>
+                                </button>
+                            </Dropdown.Trigger>
+
+                            <Dropdown.Content 
+                                align="right" 
+                                width="48"
+                                contentClasses="py-1 bg-[#131b2e] border border-[#222a3d] shadow-2xl rounded-md"
+                            >
+                                <Dropdown.Link 
+                                    href={route('profile.edit')}
+                                    className="!text-slate-300 hover:!bg-[#222a3d] hover:!text-white focus:!bg-[#222a3d] focus:!text-white transition-colors"
+                                >
+                                    Profile
+                                </Dropdown.Link>
+                                <Dropdown.Link
+                                    href={route('logout')}
+                                    method="post"
+                                    as="button"
+                                    className="!text-slate-300 hover:!bg-[#222a3d] hover:!text-white focus:!bg-[#222a3d] focus:!text-white transition-colors w-full text-left"
+                                >
+                                    Log Out
+                                </Dropdown.Link>
+                            </Dropdown.Content>
+                        </Dropdown>
                     ) : (
                         <>
                             <Link
@@ -120,12 +142,11 @@ export default function Navbar({ auth }) {
                 </div>
             </header>
 
-            {/* Conditionally render the Leaderboard modal */}
+            {/* Modals */}
             {isLeaderboardOpen && (
                 <Leaderboard onClose={() => setIsLeaderboardOpen(false)} />
             )}
 
-            {/* Conditionally render the new AboutModal */}
             <AboutModal 
                 isOpen={isAboutOpen} 
                 onClose={() => setIsAboutOpen(false)} 
