@@ -2,11 +2,18 @@ import React from 'react';
 import { Head } from '@inertiajs/react';
 import Navbar from '@/Components/Navbar';
 
-export default function Dashboard({ auth, stats, feedbacks, activeUsers }) {
+// --- NEW: Added systemHealth to destructured props ---
+export default function Dashboard({ auth, stats, feedbacks, activeUsers, systemHealth }) {
+    
+    // --- NEW: Logic to determine if the health status is an error or warning ---
+    const healthStatusText = systemHealth || 'Healthy: Load balancing optimal. All sub-modules reporting normal parameters.';
+    const isHealthError = healthStatusText.toLowerCase().includes('error') || 
+                          healthStatusText.toLowerCase().includes('critical') || 
+                          healthStatusText.toLowerCase().includes('warning');
+
     return (
         <>
             <Head title="Admin Dashboard">
-                {/* 1. Added identical font and icon links from Stats.jsx */}
                 <link rel="preconnect" href="https://fonts.googleapis.com" />
                 <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
                 <link 
@@ -19,7 +26,6 @@ export default function Dashboard({ auth, stats, feedbacks, activeUsers }) {
                 />
             </Head>
 
-            {/* 2. Added identical style block to configure Material Symbols properly */}
             <style dangerouslySetInnerHTML={{
                 __html: `
                     .material-symbols-outlined {
@@ -28,22 +34,17 @@ export default function Dashboard({ auth, stats, feedbacks, activeUsers }) {
                 `
             }} />
 
-            {/* 3. Matched the background and selection styling from Stats.jsx */}
             <div className="bg-[#0b1326] min-h-screen text-[#dae2fd] font-body selection:bg-[#3d5afe] selection:text-[#f1f0ff] overflow-x-hidden relative">
                 
-                {/* Navbar integrated at the top. The icons here will now render perfectly! */}
                 <Navbar auth={auth} />
 
-                {/* Removed max-w-screen-2xl and mx-auto to allow full-width expansion, adjusted padding */}
                 <main className="pt-32 pb-10 flex flex-col min-h-screen w-full space-y-8 px-6 md:px-8">
                     
-                    {/* Dynamic Dashboard Grid */}
                     <section className="grid grid-cols-12 gap-8 flex-1">
                         
-                        {/* Left Panel: Feedback Inbox (8 Columns) */}
+                        {/* Left Panel: Feedback Inbox */}
                         <div className="col-span-12 lg:col-span-8 flex flex-col gap-8">
                             
-                            {/* Header Stats Area */}
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                 <div className="bg-[#131b2e] p-8 rounded-xl border-l-4 border-[#bbc3ff] shadow-none">
                                     <p className="text-[#c5c5d9] text-xs font-bold uppercase tracking-widest mb-2 font-label">Active Users</p>
@@ -73,7 +74,6 @@ export default function Dashboard({ auth, stats, feedbacks, activeUsers }) {
                                 </div>
                             </div>
 
-                            {/* Feedback Inbox */}
                             <div className="bg-[#131b2e] rounded-xl overflow-hidden flex flex-col flex-1 border-none shadow-none">
                                 <div className="p-8 border-b border-[#444656]/10 flex justify-between items-center">
                                     <div className="flex items-center gap-3">
@@ -113,10 +113,9 @@ export default function Dashboard({ auth, stats, feedbacks, activeUsers }) {
                             </div>
                         </div>
 
-                        {/* Right Panel: Lexi Engine & Active Management (4 Columns) */}
+                        {/* Right Panel: Lexi Engine & Active Management */}
                         <div className="col-span-12 lg:col-span-4 flex flex-col gap-8">
                             
-                            {/* Lexi Engine Insights - Matched the floating Glassmorphism style */}
                             <div className="bg-[#131b2e]/70 backdrop-blur-xl p-8 rounded-2xl shadow-[0px_20px_40px_rgba(6,14,32,0.4)] border border-white/10 relative overflow-hidden group">
                                 <div className="absolute top-0 right-0 w-32 h-32 bg-[#bbc3ff]/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
                                 
@@ -133,10 +132,18 @@ export default function Dashboard({ auth, stats, feedbacks, activeUsers }) {
                                     </div>
                                 </div>
                                 <div className="space-y-4 relative z-10">
-                                    <div className="p-5 rounded-xl bg-[#060e20]/80 border border-white/5 border-l-2 border-l-[#bbc3ff] hover:bg-[#060e20] transition-colors">
-                                        <p className="text-xs text-[#c5c5d9] font-bold mb-2 uppercase tracking-wide">System Health</p>
-                                        <p className="text-sm text-white font-light">Load balancing optimal. All sub-modules reporting normal parameters.</p>
+                                    
+                                    {/* --- NEW: Dynamic System Health Display --- */}
+                                    <div className={`p-5 rounded-xl bg-[#060e20]/80 border border-white/5 border-l-2 hover:bg-[#060e20] transition-colors ${isHealthError ? 'border-l-[#ff4757]' : 'border-l-[#bbc3ff]'}`}>
+                                        <div className="flex justify-between items-center mb-2">
+                                            <p className={`text-xs font-bold uppercase tracking-wide ${isHealthError ? 'text-[#ff4757]' : 'text-[#c5c5d9]'}`}>System Health</p>
+                                            {isHealthError && <span className="material-symbols-outlined text-[#ff4757] text-sm">warning</span>}
+                                        </div>
+                                        <p className={`text-sm font-light ${isHealthError ? 'text-[#ffb3b8]' : 'text-white'}`}>
+                                            {healthStatusText}
+                                        </p>
                                     </div>
+
                                     <div className="p-5 rounded-xl bg-[#060e20]/80 border border-white/5 border-l-2 border-l-[#4edea3] hover:bg-[#060e20] transition-colors">
                                         <p className="text-xs text-[#c5c5d9] font-bold mb-2 uppercase tracking-wide">User Performance</p>
                                         <p className="text-sm text-white font-light">Top 5% of users show consistency in 'Burst Typing' metrics today.</p>
@@ -144,7 +151,6 @@ export default function Dashboard({ auth, stats, feedbacks, activeUsers }) {
                                 </div>
                             </div>
 
-                            {/* Active Management / User List */}
                             <div className="bg-[#131b2e] rounded-xl flex-1 flex flex-col overflow-hidden">
                                 <div className="p-8 border-b border-[#444656]/10">
                                     <h3 className="font-headline font-semibold text-xl text-white">Active Users</h3>

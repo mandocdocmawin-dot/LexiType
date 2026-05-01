@@ -6,6 +6,7 @@ use Inertia\Inertia;
 use App\Models\User;
 use App\Models\TypingSession;
 use App\Models\UserFeedback;
+use Illuminate\Support\Facades\Cache; 
 use Carbon\Carbon;
 
 class DashboardController extends Controller
@@ -18,7 +19,6 @@ class DashboardController extends Controller
         $averageAccuracy = round(TypingSession::avg('accuracy_percentage') ?? 0, 1);
 
         // 2. Fetch Latest Feedback Inbox
-        // Assuming UserFeedback model belongsTo User
         $feedbacks = UserFeedback::with('user:id,name')
             ->latest()
             ->take(5)
@@ -33,11 +33,11 @@ class DashboardController extends Controller
                 ];
             });
 
-        // 3. Fetch Active Management Users (Users with their latest typing session)
+        // 3. Fetch Active Management Users
         $activeUsers = User::with(['typingSessions' => function ($query) {
                 $query->latest()->take(1);
             }])
-            ->whereHas('typingSessions') // Only get users who have played
+            ->whereHas('typingSessions') 
             ->latest()
             ->take(5)
             ->get()
@@ -47,9 +47,12 @@ class DashboardController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'wpm' => $latestSession ? $latestSession->wpm_score : 0,
-                    'tier' => 'Member', // You can replace this with actual tier logic later
+                    'tier' => 'Member', 
                 ];
             });
+
+        // --- NEW: Retrieve API Health Status ---
+        $systemHealth = Cache::get('system_health_ai_api', 'Healthy: Load balancing optimal. All sub-modules reporting normal parameters.');
 
         // Pass data to the React frontend via Inertia
         return Inertia::render('Dashboard', [
@@ -60,6 +63,7 @@ class DashboardController extends Controller
             ],
             'feedbacks' => $feedbacks,
             'activeUsers' => $activeUsers,
+            'systemHealth' => $systemHealth, // --- NEW: Passed to frontend ---
         ]);
     }
 }

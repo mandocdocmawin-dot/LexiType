@@ -103,6 +103,9 @@ class AIAnalysisController extends Controller
                     'reset_at' => $resetDateObj->toDateTimeString()
                 ], $resetDateObj);
 
+                // --- NEW: System Health Success ---
+                Cache::put('system_health_ai_api', 'Healthy: Load balancing optimal. All sub-modules reporting normal parameters.', now()->addMinutes(30));
+
             } else {
                 $status = $response->status();
                 $body = $response->body();
@@ -110,14 +113,20 @@ class AIAnalysisController extends Controller
                 
                 if ($status === 503) {
                     $aiMessage = "Masyadong maraming gumagamit sa AI coach ngayon. Pakisubukang muli pagkalipas ng ilang sandali.";
+                    // --- NEW: System Health Warning ---
+                    Cache::put('system_health_ai_api', "Warning: AI Service is currently overloaded (503).", now()->addMinutes(5));
                 } else {
                     $aiMessage = "You have reached your limit or there is an issue with the AI.";
+                    // --- NEW: System Health Error ---
+                    Cache::put('system_health_ai_api', "Error: AI Service quota exceeded or unavailable (Status {$status}).", now()->addMinutes(5));
                 }
             }
 
         } catch (\Exception $e) {
             Log::error("System Error in AI: " . $e->getMessage(), ['exception' => $e]);
             $aiMessage = "Sorry, there was a system connection error. Please try again later.";
+            // --- NEW: System Health Critical Error ---
+            Cache::put('system_health_ai_api', "Critical: System connection error to AI service.", now()->addMinutes(5));
         }
 
         return response()->json([
