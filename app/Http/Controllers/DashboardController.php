@@ -43,11 +43,23 @@ class DashboardController extends Controller
             ->get()
             ->map(function ($user) {
                 $latestSession = $user->typingSessions->first();
+                $wpm = $latestSession ? $latestSession->wpm_score : 0;
+                
+                // Dynamic tier calculation based on WPM
+                $tier = 'Novice';
+                if ($wpm >= 100) {
+                    $tier = 'Grandmaster';
+                } elseif ($wpm >= 70) {
+                    $tier = 'Master';
+                } elseif ($wpm >= 40) {
+                    $tier = 'Pro';
+                }
+
                 return [
                     'id' => $user->id,
                     'name' => $user->name,
-                    'wpm' => $latestSession ? $latestSession->wpm_score : 0,
-                    'tier' => 'Member', 
+                    'wpm' => $wpm,
+                    'tier' => $tier, 
                 ];
             });
 

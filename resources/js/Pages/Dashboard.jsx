@@ -127,7 +127,7 @@ export default function Dashboard({ auth, stats, feedbacks, activeUsers, systemH
                                         </div>
                                     </div>
                                     <div>
-                                        <h4 className="font-headline font-bold text-xl text-white">Lexi Engine</h4>
+                                        <h4 className="font-headline font-bold text-xl text-white">LexiType Engine</h4>
                                         <p className="text-[10px] text-[#bbc3ff] font-bold uppercase tracking-widest mt-1">Active Analysis</p>
                                     </div>
                                 </div>
@@ -144,13 +144,17 @@ export default function Dashboard({ auth, stats, feedbacks, activeUsers, systemH
                                         </p>
                                     </div>
 
+                                    {/* User Performance */}
                                     <div className="p-5 rounded-xl bg-[#060e20]/80 border border-white/5 border-l-2 border-l-[#4edea3] hover:bg-[#060e20] transition-colors">
                                         <p className="text-xs text-[#c5c5d9] font-bold mb-2 uppercase tracking-wide">User Performance</p>
-                                        <p className="text-sm text-white font-light">Top 5% of users show consistency in 'Burst Typing' metrics today.</p>
+                                        <p className="text-sm text-white font-light">
+                                            Global averages are currently maintaining <span className="font-bold text-[#4edea3]">{stats?.averageWpm || 0} WPM</span> with a collective accuracy of <span className="font-bold text-[#4edea3]">{stats?.averageAccuracy || 0}%</span>.
+                                        </p>
                                     </div>
                                 </div>
                             </div>
 
+                            {/* Active Management / User List */}
                             <div className="bg-[#131b2e] rounded-xl flex-1 flex flex-col overflow-hidden">
                                 <div className="p-8 border-b border-[#444656]/10">
                                     <h3 className="font-headline font-semibold text-xl text-white">Active Users</h3>
@@ -165,11 +169,14 @@ export default function Dashboard({ auth, stats, feedbacks, activeUsers, systemH
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <p className="text-sm font-bold text-white truncate font-headline">{user.name}</p>
+                                                    {/* Dynamic Tier */}
                                                     <p className="text-xs text-[#c5c5d9] mt-0.5">{user.tier}</p>
                                                 </div>
                                                 <div className="text-right">
+                                                    {/* Dynamic WPM Number */}
                                                     <p className="text-sm font-bold text-[#4edea3] font-headline">{user.wpm} WPM</p>
                                                     <div className="w-16 h-1.5 bg-[#060e20] rounded-full mt-2 overflow-hidden">
+                                                        {/* Dynamic Progress Bar Width */}
                                                         <div 
                                                             className="bg-[#4edea3] h-full rounded-full shadow-[0_0_8px_rgba(78,222,163,0.5)]" 
                                                             style={{ width: `${Math.min((user.wpm / 150) * 100, 100)}%` }}
