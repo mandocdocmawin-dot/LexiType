@@ -20,6 +20,22 @@ export default function AiChatModal({ isOpen, onClose, auth }) {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
 
+    // ADDED: Global keydown listener for the 'Escape' key
+    useEffect(() => {
+    const handleKeyDown = (e) => {
+        if (e.key === 'Escape') {
+        onClose();
+        }
+    };
+
+    // Attach the event listener to the window
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+        window.removeEventListener('keydown', handleKeyDown);
+    };
+    }, [onClose]);
+
     useEffect(() => {
         scrollToBottom();
         // Save messages to sessionStorage whenever they update

@@ -9,6 +9,22 @@ export default function Feedback({ isOpen, onClose }) {
 
     const [isSubmitted, setIsSubmitted] = useState(false);
 
+    // ADDED: Global keydown listener for the 'Escape' key
+    useEffect(() => {
+    const handleKeyDown = (e) => {
+        if (e.key === 'Escape') {
+        onClose();
+        }
+    };
+
+    // Attach the event listener to the window
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+        window.removeEventListener('keydown', handleKeyDown);
+    };
+    }, [onClose]);
+
     useEffect(() => {
         if (!isOpen) {
             setTimeout(() => setIsSubmitted(false), 200);

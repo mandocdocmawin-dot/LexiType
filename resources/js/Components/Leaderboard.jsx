@@ -6,6 +6,22 @@ const Leaderboard = ({ onClose }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false); 
   const [isLoading, setIsLoading] = useState(true);
 
+  // ADDED: Global keydown listener for the 'Escape' key
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    // Attach the event listener to the window
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [onClose]);
+
   useEffect(() => {
     const fetchLeaderboard = async () => {
       try {
@@ -18,8 +34,6 @@ const Leaderboard = ({ onClose }) => {
           const newData = Array.isArray(result.data) ? result.data : result.data.data || [];
           setLeaderboardData(newData);
 
-          // MAGIC TRICK: Dito natin idede-detect ang Laravel Auth!
-          // Kung kasama ang 'currentUserPosition' sa response, alam natin na logged in siya.
           if ('currentUserPosition' in result) {
             setIsAuthenticated(true);
             setCurrentUserStats(result.currentUserPosition);
