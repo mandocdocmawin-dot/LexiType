@@ -1,12 +1,14 @@
-import React, { useState } from 'react'; // Added useState
+import React, { useState } from 'react';
 import { Link, usePage } from '@inertiajs/react';
-import Leaderboard from './Leaderboard'; // Import the Leaderboard component (Adjust the path if it's in a different folder, like '@/Components/Leaderboard')
+import Leaderboard from './Leaderboard';
+import AboutModal from './AboutApp';
 
 export default function Navbar({ auth }) {
     const { url } = usePage();
     
-    // 1. Initialize our state to track if the modal is open
+    // 1. Initialize states for modals
     const [isLeaderboardOpen, setIsLeaderboardOpen] = useState(false);
+    const [isAboutOpen, setIsAboutOpen] = useState(false);
 
     const navLinkClasses = (path) => {
         return url === path
@@ -15,7 +17,6 @@ export default function Navbar({ auth }) {
     };
 
     return (
-        // 2. Wrap everything in a React Fragment
         <>
             <header className="bg-[#131b2e] text-slate-400 font-medium flex justify-between items-center w-full px-6 md:px-12 h-20 max-w-[1920px] mx-auto fixed top-0 left-0 right-0 z-40">
                 <div className="flex items-center gap-12">
@@ -30,19 +31,30 @@ export default function Navbar({ auth }) {
                     {auth?.user ? (
                         <nav className="hidden md:flex items-center gap-8 text-sm font-semibold tracking-wide">
                             <Link href="/dashboard" className={navLinkClasses('/dashboard')}>Dashboard</Link>
-                            <Link href="/about" className={navLinkClasses('/about')}>About</Link>
+                            {/* Updated About to a button triggering the modal */}
+                            <button 
+                                onClick={() => setIsAboutOpen(true)} 
+                                className="text-slate-400 hover:text-white transition-colors"
+                            >
+                                About
+                            </button>
                         </nav>
                     ) : (
                         <nav className="hidden md:flex items-center gap-8 text-sm font-semibold tracking-wide">
                             <Link href="/" className={navLinkClasses('/')}>Home</Link>
-                            <Link href="/about" className={navLinkClasses('/about')}>About</Link>
+                            {/* Updated About to a button triggering the modal */}
+                            <button 
+                                onClick={() => setIsAboutOpen(true)} 
+                                className="text-slate-400 hover:text-white transition-colors"
+                            >
+                                About
+                            </button>
                         </nav>
                     )}
                 </div>
 
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2 mr-4">
-                        {/* 3. Add onClick handler to open the leaderboard */}
                         <button 
                             onClick={() => setIsLeaderboardOpen(true)}
                             className="p-2 text-slate-400 hover:text-white transition-colors"
@@ -92,10 +104,16 @@ export default function Navbar({ auth }) {
                 </div>
             </header>
 
-            {/* 4. Conditionally render the modal and pass the onClose prop */}
+            {/* Conditionally render the Leaderboard modal */}
             {isLeaderboardOpen && (
                 <Leaderboard onClose={() => setIsLeaderboardOpen(false)} />
             )}
+
+            {/* Conditionally render the new AboutModal */}
+            <AboutModal 
+                isOpen={isAboutOpen} 
+                onClose={() => setIsAboutOpen(false)} 
+            />
         </>
     );
 }
