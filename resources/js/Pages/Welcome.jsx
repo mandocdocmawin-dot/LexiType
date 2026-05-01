@@ -159,8 +159,28 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
         };
 
         const handleGlobalKeydown = (e) => {
-            if (isFeedbackModalOpen || isAiModalOpen || status === 'finished' || document.activeElement === inputRef.current) return;
+            // 1. Handle Escape Key Hierarchy (Priority matching)
+            if (e.key === 'Escape') {
+                if (isAiModalOpen) {
+                    setIsAiModalOpen(false);
+                    return; // Stop here, only close AI modal
+                }
+                if (isFeedbackModalOpen) {
+                    setIsFeedbackModalOpen(false);
+                    return; // Stop here, only close Feedback modal
+                }
+                if (status === 'finished') {
+                    resetTest();
+                    return; // Stop here, reset the typing test session
+                }
+            }
+
+            // 2. Prevent auto-focusing if any overlay or the finished state is active
+            if (isFeedbackModalOpen || isAiModalOpen || status === 'finished' || document.activeElement === inputRef.current) {
+                return;
+            }
             
+            // 3. Auto-focus on regular character typing
             if (e.key.length === 1 && inputRef.current) {
                 inputRef.current.focus();
                 setShowFocusHint(false);
@@ -169,6 +189,8 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
 
         window.addEventListener('click', handleGlobalClick);
         window.addEventListener('keydown', handleGlobalKeydown);
+        
+        // Cleanup event listeners on unmount or dependency change
         return () => {
             window.removeEventListener('click', handleGlobalClick);
             window.removeEventListener('keydown', handleGlobalKeydown);

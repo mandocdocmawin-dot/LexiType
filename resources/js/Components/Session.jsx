@@ -90,34 +90,53 @@ export default function Session({
                                 </div>
                                 <div>
                                     <h3 className="font-display text-lg font-medium text-[#dae2fd]">LexiType Coach Insights</h3>
-                                    <p className="font-label text-xs text-[#4edea3]">Session analyzed</p>
+                                    <p className="font-label text-xs text-[#4edea3]">{auth?.user ? 'Session analyzed' : 'Premium Feature'}</p>
                                 </div>
                             </div>
                             
-                            {/* Dynamic AI text paragraph */}
-                            <div className="bg-[#0b1326]/50 rounded-lg p-5 mb-5 relative z-10 border border-[#444656]/10">
-                                <p className="font-body text-sm text-[#dae2fd] leading-relaxed" dangerouslySetInnerHTML={{ __html: aiInsightText }}></p>
-                            </div>
-                            
-                            <div className="grid grid-cols-2 gap-3 relative z-10">
-                                {/* Dynamic Trouble Key Box */}
-                                <div className="bg-[#2d3449] rounded p-3 flex flex-col">
-                                    <span className="font-label text-[10px] text-[#c5c5d9] uppercase mb-1">Trouble Key</span>
-                                    {playedPerfectly ? (
-                                        <span className="font-display text-[#4edea3] text-xl font-bold">None</span>
-                                    ) : (
-                                        <span className="font-display text-[#ffb2b7] text-xl font-bold">
-                                            {troubleKey === ' ' ? 'Space' : troubleKey}
-                                        </span>
-                                    )}
+                            {/* Conditional Rendering based on Authentication */}
+                            {auth?.user ? (
+                                <>
+                                    {/* Dynamic AI text paragraph */}
+                                    <div className="bg-[#0b1326]/50 rounded-lg p-5 mb-5 relative z-10 border border-[#444656]/10">
+                                        <p className="font-body text-sm text-[#dae2fd] leading-relaxed" dangerouslySetInnerHTML={{ __html: aiInsightText }}></p>
+                                    </div>
+                                    
+                                    <div className="grid grid-cols-2 gap-3 relative z-10">
+                                        {/* Dynamic Trouble Key Box */}
+                                        <div className="bg-[#2d3449] rounded p-3 flex flex-col">
+                                            <span className="font-label text-[10px] text-[#c5c5d9] uppercase mb-1">Trouble Key</span>
+                                            {playedPerfectly ? (
+                                                <span className="font-display text-[#4edea3] text-xl font-bold">None</span>
+                                            ) : (
+                                                <span className="font-display text-[#ffb2b7] text-xl font-bold">
+                                                    {troubleKey === ' ' ? 'Space' : troubleKey}
+                                                </span>
+                                            )}
+                                        </div>
+                                        
+                                        {/* Dynamic Max Streak Box */}
+                                        <div className="bg-[#2d3449] rounded p-3 flex flex-col">
+                                            <span className="font-label text-[10px] text-[#c5c5d9] uppercase mb-1">Max Streak</span>
+                                            <span className="font-display text-[#4edea3] text-xl font-bold">{maxStreak}</span>
+                                        </div>
+                                    </div>
+                                </>
+                            ) : (
+                                /* Locked State UI for Guests */
+                                <div className="bg-[#0b1326]/60 rounded-lg p-6 relative z-10 border border-[#444656]/20 flex flex-col items-center text-center justify-center h-full">
+                                    <span className="material-symbols-outlined text-[#bbc3ff] text-4xl mb-3 opacity-80">lock</span>
+                                    <p className="font-body text-sm text-[#c5c5d9] mb-5 leading-relaxed">
+                                        Unlock your full potential! Create a free account to get personalized AI typing feedback, analyze your bottlenecks, and track your trouble keys.
+                                    </p>
+                                    <Link 
+                                        href={route('register')} 
+                                        className="w-full px-4 py-3 bg-[#3d5afe] text-white font-bold rounded-lg hover:bg-[#3d5afe]/80 transition-colors text-sm shadow-[0_5px_15px_rgba(61,90,254,0.3)]"
+                                    >
+                                        Create Free Account
+                                    </Link>
                                 </div>
-                                
-                                {/* Dynamic Max Streak Box */}
-                                <div className="bg-[#2d3449] rounded p-3 flex flex-col">
-                                    <span className="font-label text-[10px] text-[#c5c5d9] uppercase mb-1">Max Streak</span>
-                                    <span className="font-display text-[#4edea3] text-xl font-bold">{maxStreak}</span>
-                                </div>
-                            </div>
+                            )}
                         </div>
 
                         {/* Action Buttons */}
