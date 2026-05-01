@@ -11,13 +11,22 @@ class IsAdmin
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $role = strtolower(Auth::user()?->role ?? '');
+        if (!Auth::check()) {
+            return redirect('/login');
+        }
 
-        if (Auth::check() && in_array($role, ['admin', 'administrator'])) {
+        $user = Auth::user();
+        $role = strtolower($user->role ?? '');
+
+        if (in_array($role, ['admin', 'administrator'])) {
             return $next($request);
         }
 
-        // Redirect non-admins to home with a message instead of a JSON error
+        // Return different response based on request type
+        if ($request->expectsJson()) {
+            return response()->json(['message' => 'Unauthorized. Admin access only.'], 403);
+        }
+
         return redirect('/')->with('error', 'Unauthorized. Admin access only.');
     }
 }

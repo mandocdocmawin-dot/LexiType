@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -183,10 +184,19 @@ class ManageUsersController extends Controller
      */
     public function destroy(User $user)
     {
-        $name = $user->name;
-        $user->delete();
+        // Authorize the delete action
+        $this->authorize('delete', $user);
 
-        return redirect()->route('admin.users.index')
-            ->with('success', "{$name}'s data has been permanently deleted.");
+        try {
+            $name = $user->name;
+            $user->delete();
+
+            return redirect()->route('admin.users.index')
+                ->with('success', "{$name}'s data has been permanently deleted.");
+        } catch (\Exception $e) {
+            return redirect()->route('admin.users.index')
+                ->with('error', 'Error deleting user: ' . $e->getMessage());
+        }
     }
+    use AuthorizesRequests;
 }
