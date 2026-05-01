@@ -20,7 +20,8 @@ export default function Navbar({ auth }) {
         <>
             <header className="bg-[#131b2e] text-slate-400 font-medium flex justify-between items-center w-full px-6 md:px-12 h-20 max-w-[1920px] mx-auto fixed top-0 left-0 right-0 z-40">
                 <div className="flex items-center gap-12">
-                    <Link href="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity cursor-pointer">
+                    {/* Updated Logo Link: Removed hover:opacity-80 transition-opacity */}
+                    <Link href="/" className="flex items-center gap-3 cursor-pointer">
                         <img src="/img/logo.png" alt="Lexitype Logo" className="h-12 w-auto" />
                         
                         <div className="text-xl font-bold tracking-tight text-white font-headline">
@@ -31,7 +32,6 @@ export default function Navbar({ auth }) {
                     {auth?.user ? (
                         <nav className="hidden md:flex items-center gap-8 text-sm font-semibold tracking-wide">
                             <Link href="/dashboard" className={navLinkClasses('/dashboard')}>Dashboard</Link>
-                            {/* Updated About to a button triggering the modal */}
                             <button 
                                 onClick={() => setIsAboutOpen(true)} 
                                 className="text-slate-400 hover:text-white transition-colors"
@@ -42,7 +42,6 @@ export default function Navbar({ auth }) {
                     ) : (
                         <nav className="hidden md:flex items-center gap-8 text-sm font-semibold tracking-wide">
                             <Link href="/" className={navLinkClasses('/')}>Home</Link>
-                            {/* Updated About to a button triggering the modal */}
                             <button 
                                 onClick={() => setIsAboutOpen(true)} 
                                 className="text-slate-400 hover:text-white transition-colors"
@@ -55,23 +54,33 @@ export default function Navbar({ auth }) {
 
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-2 mr-4">
+                        {/* Leaderboard Button with Tooltip */}
                         <button 
                             onClick={() => setIsLeaderboardOpen(true)}
-                            className="p-2 text-slate-400 hover:text-white transition-colors"
+                            className="group relative p-2 text-slate-400 hover:text-white transition-colors"
                         >
                             <span className="material-symbols-outlined">emoji_events</span>
+                            {/* Leaderboard Tooltip element */}
+                            <span className="absolute top-full left-1/2 -translate-x-1/2 mt-1 px-2 py-1 bg-[#222a3d] text-xs text-slate-200 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                Leaderboard
+                            </span>
                         </button>
                         
                        {auth?.user?.role === 'user' ? (
+                            /* Stats Link with Tooltip */
                             <Link 
                                 href={route('stats')} 
-                                className={`p-2 rounded-lg flex items-center justify-center transition-all ${
+                                className={`group relative p-2 rounded-lg flex items-center justify-center transition-all ${
                                     url?.startsWith('/stats') 
                                         ? 'text-[#bbc3ff] bg-[#222a3d]/50' 
                                         : 'text-slate-400 hover:text-white hover:bg-[#222a3d]/30'
                                 }`}
                             >
                                 <span className="material-symbols-outlined">query_stats</span>
+                                {/* Stats Tooltip element */}
+                                <span className="absolute top-full left-1/2 -translate-x-1/2 mt-1 px-2 py-1 bg-[#222a3d] text-xs text-slate-200 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                    Stats
+                                </span>
                             </Link>
                         ) : null}
                     </div>
