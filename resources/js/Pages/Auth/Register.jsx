@@ -125,7 +125,7 @@ export default function Register() {
                                         className="w-full bg-[#151b2b] border border-transparent rounded-lg py-3.5 pl-11 pr-4 text-sm text-white focus:outline-none focus:border-[#4f56ff] focus:ring-1 focus:ring-[#4f56ff] transition-all placeholder-[#475569]" 
                                         placeholder="John Doe" 
                                         autoComplete="name"
-                                        isFocused={true}
+                                        autoFocus
                                         required
                                     />
                                 </div>

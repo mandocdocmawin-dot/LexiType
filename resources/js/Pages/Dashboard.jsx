@@ -2,10 +2,9 @@ import React from 'react';
 import { Head } from '@inertiajs/react';
 import Navbar from '@/Components/Navbar';
 
-// --- NEW: Added systemHealth to destructured props ---
 export default function Dashboard({ auth, stats, feedbacks, activeUsers, systemHealth }) {
     
-    // --- NEW: Logic to determine if the health status is an error or warning ---
+    // --- Logic to determine if the health status is an error or warning ---
     const healthStatusText = systemHealth || 'Healthy: Load balancing optimal. All sub-modules reporting normal parameters.';
     const isHealthError = healthStatusText.toLowerCase().includes('error') || 
                           healthStatusText.toLowerCase().includes('critical') || 
@@ -34,18 +33,18 @@ export default function Dashboard({ auth, stats, feedbacks, activeUsers, systemH
                 `
             }} />
 
-            <div className="bg-[#0b1326] min-h-screen text-[#dae2fd] font-body selection:bg-[#3d5afe] selection:text-[#f1f0ff] overflow-x-hidden relative">
+            <div className="bg-[#0b1326] h-screen text-[#dae2fd] font-body selection:bg-[#3d5afe] selection:text-[#f1f0ff] overflow-hidden relative">
                 
                 <Navbar auth={auth} />
 
-                <main className="pt-32 pb-10 flex flex-col min-h-screen w-full space-y-8 px-6 md:px-8">
+                <main className="pt-32 pb-8 flex flex-col h-full w-full space-y-8 px-6 md:px-8">
                     
-                    <section className="grid grid-cols-12 gap-8 flex-1">
+                    <section className="grid grid-cols-12 gap-8 flex-1 min-h-0">
                         
                         {/* Left Panel: Feedback Inbox */}
-                        <div className="col-span-12 lg:col-span-8 flex flex-col gap-8">
+                        <div className="col-span-12 lg:col-span-8 flex flex-col gap-8 h-full min-h-0">
                             
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 shrink-0">
                                 <div className="bg-[#131b2e] p-8 rounded-xl border-l-4 border-[#bbc3ff] shadow-none">
                                     <p className="text-[#c5c5d9] text-xs font-bold uppercase tracking-widest mb-2 font-label">Active Users</p>
                                     <h2 className="text-4xl font-headline font-bold text-white">{stats?.totalUsers || 0}</h2>
@@ -74,8 +73,8 @@ export default function Dashboard({ auth, stats, feedbacks, activeUsers, systemH
                                 </div>
                             </div>
 
-                            <div className="bg-[#131b2e] rounded-xl overflow-hidden flex flex-col flex-1 border-none shadow-none">
-                                <div className="p-8 border-b border-[#444656]/10 flex justify-between items-center">
+                            <div className="bg-[#131b2e] rounded-xl overflow-hidden flex flex-col flex-1 border-none shadow-none min-h-0">
+                                <div className="p-8 border-b border-[#444656]/10 flex justify-between items-center shrink-0">
                                     <div className="flex items-center gap-3">
                                         <div className="w-3 h-3 rounded-full bg-[#4edea3] animate-pulse"></div>
                                         <div>
@@ -84,25 +83,38 @@ export default function Dashboard({ auth, stats, feedbacks, activeUsers, systemH
                                         </div>
                                     </div>
                                 </div>
-                                <div className="flex-1 overflow-y-auto no-scrollbar p-8 space-y-4">
+                                <div className="flex-1 overflow-y-auto custom-scrollbar p-8 space-y-4">
                                     {feedbacks?.length > 0 ? (
-                                        feedbacks.map((feedback) => (
-                                            <div key={feedback.id} className="group flex items-start gap-5 p-5 rounded-xl bg-[#060e20] hover:bg-[#222a3d]/50 transition-all border border-transparent hover:border-[#bbc3ff]/20">
-                                                <div className="w-12 h-12 rounded-xl bg-[#bbc3ff]/10 flex items-center justify-center text-[#bbc3ff]">
-                                                    <span className="material-symbols-outlined">rate_review</span>
-                                                </div>
-                                                <div className="flex-1">
-                                                    <div className="flex justify-between mb-1">
-                                                        <span className="font-bold text-white font-headline">{feedback.user_name}</span>
-                                                        <span className="text-xs text-[#c5c5d9] font-medium">{feedback.time_ago}</span>
+                                        <>
+                                            {/* Slices the array to display a maximum of 10 items */}
+                                            {feedbacks.slice(0, 10).map((feedback) => (
+                                                <div key={feedback.id} className="group flex items-start gap-5 p-5 rounded-xl bg-[#060e20] hover:bg-[#222a3d]/50 transition-all border border-transparent hover:border-[#bbc3ff]/20">
+                                                    <div className="w-12 h-12 rounded-xl bg-[#bbc3ff]/10 flex items-center justify-center text-[#bbc3ff]">
+                                                        <span className="material-symbols-outlined">rate_review</span>
                                                     </div>
-                                                    <p className="text-[#c5c5d9] text-sm leading-relaxed mt-1">
-                                                        <span className="text-[#bbc3ff] font-semibold mr-2">[{feedback.category}]</span> 
-                                                        {feedback.message}
-                                                    </p>
+                                                    <div className="flex-1">
+                                                        <div className="flex justify-between mb-1">
+                                                            <span className="font-bold text-white font-headline">{feedback.user_name}</span>
+                                                            <span className="text-xs text-[#c5c5d9] font-medium">{feedback.time_ago}</span>
+                                                        </div>
+                                                        <p className="text-[#c5c5d9] text-sm leading-relaxed mt-1">
+                                                            <span className="text-[#bbc3ff] font-semibold mr-2">[{feedback.category}]</span> 
+                                                            {feedback.message}
+                                                        </p>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        ))
+                                            ))}
+                                            
+                                            {/* Triggers if the backend passed 11 items */}
+                                            {feedbacks.length > 10 && (
+                                                <div className="pt-4 flex justify-center">
+                                                    <button className="flex items-center gap-2 px-6 py-2 rounded-full border border-[#444656]/50 text-sm font-medium text-[#c5c5d9] hover:text-[#bbc3ff] hover:bg-[#bbc3ff]/5 hover:border-[#bbc3ff]/30 transition-all group">
+                                                        View All Feedbacks
+                                                        <span className="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </>
                                     ) : (
                                         <div className="py-12 flex flex-col items-center justify-center text-[#c5c5d9]">
                                             <span className="material-symbols-outlined text-4xl mb-3 opacity-50">inbox</span>
@@ -114,9 +126,9 @@ export default function Dashboard({ auth, stats, feedbacks, activeUsers, systemH
                         </div>
 
                         {/* Right Panel: Lexi Engine & Active Management */}
-                        <div className="col-span-12 lg:col-span-4 flex flex-col gap-8">
+                        <div className="col-span-12 lg:col-span-4 flex flex-col gap-8 h-full min-h-0">
                             
-                            <div className="bg-[#131b2e]/70 backdrop-blur-xl p-8 rounded-2xl shadow-[0px_20px_40px_rgba(6,14,32,0.4)] border border-white/10 relative overflow-hidden group">
+                            <div className="bg-[#131b2e]/70 backdrop-blur-xl p-8 rounded-2xl shadow-[0px_20px_40px_rgba(6,14,32,0.4)] border border-white/10 relative overflow-hidden group shrink-0">
                                 <div className="absolute top-0 right-0 w-32 h-32 bg-[#bbc3ff]/5 rounded-full blur-3xl -mr-10 -mt-10 pointer-events-none"></div>
                                 
                                 <div className="flex items-center gap-5 mb-8 relative z-10">
@@ -133,7 +145,6 @@ export default function Dashboard({ auth, stats, feedbacks, activeUsers, systemH
                                 </div>
                                 <div className="space-y-4 relative z-10">
                                     
-                                    {/* --- NEW: Dynamic System Health Display --- */}
                                     <div className={`p-5 rounded-xl bg-[#060e20]/80 border border-white/5 border-l-2 hover:bg-[#060e20] transition-colors ${isHealthError ? 'border-l-[#ff4757]' : 'border-l-[#bbc3ff]'}`}>
                                         <div className="flex justify-between items-center mb-2">
                                             <p className={`text-xs font-bold uppercase tracking-wide ${isHealthError ? 'text-[#ff4757]' : 'text-[#c5c5d9]'}`}>System Health</p>
@@ -144,7 +155,6 @@ export default function Dashboard({ auth, stats, feedbacks, activeUsers, systemH
                                         </p>
                                     </div>
 
-                                    {/* User Performance */}
                                     <div className="p-5 rounded-xl bg-[#060e20]/80 border border-white/5 border-l-2 border-l-[#4edea3] hover:bg-[#060e20] transition-colors">
                                         <p className="text-xs text-[#c5c5d9] font-bold mb-2 uppercase tracking-wide">User Performance</p>
                                         <p className="text-sm text-white font-light">
@@ -154,29 +164,25 @@ export default function Dashboard({ auth, stats, feedbacks, activeUsers, systemH
                                 </div>
                             </div>
 
-                            {/* Active Management / User List */}
-                            <div className="bg-[#131b2e] rounded-xl flex-1 flex flex-col overflow-hidden">
-                                <div className="p-8 border-b border-[#444656]/10">
+                            <div className="bg-[#131b2e] rounded-xl flex-1 flex flex-col overflow-hidden min-h-0">
+                                <div className="px-8 py-5 border-b border-[#444656]/10 shrink-0">
                                     <h3 className="font-headline font-semibold text-xl text-white">Active Users</h3>
                                     <p className="text-[#c5c5d9] text-sm mt-1">Currently engaged in typing sessions</p>
                                 </div>
-                                <div className="flex-1 overflow-y-auto no-scrollbar p-8 space-y-6">
+                                <div className="flex-1 overflow-y-auto custom-scrollbar px-8 py-4 space-y-4">
                                     {activeUsers?.length > 0 ? (
                                         activeUsers.map((user) => (
                                             <div key={user.id} className="flex items-center gap-4 group hover:translate-x-1 transition-transform duration-300">
-                                                <div className="w-12 h-12 rounded-full bg-[#060e20] overflow-hidden border border-white/10 flex items-center justify-center text-[#c5c5d9] font-headline font-bold text-lg uppercase group-hover:border-[#4edea3]/50 transition-colors">
+                                                <div className="w-11 h-11 rounded-full bg-[#060e20] overflow-hidden border border-white/10 flex items-center justify-center text-[#c5c5d9] font-headline font-bold text-base uppercase group-hover:border-[#4edea3]/50 transition-colors">
                                                     {user.name.charAt(0)}
                                                 </div>
                                                 <div className="flex-1 min-w-0">
                                                     <p className="text-sm font-bold text-white truncate font-headline">{user.name}</p>
-                                                    {/* Dynamic Tier */}
                                                     <p className="text-xs text-[#c5c5d9] mt-0.5">{user.tier}</p>
                                                 </div>
                                                 <div className="text-right">
-                                                    {/* Dynamic WPM Number */}
                                                     <p className="text-sm font-bold text-[#4edea3] font-headline">{user.wpm} WPM</p>
                                                     <div className="w-16 h-1.5 bg-[#060e20] rounded-full mt-2 overflow-hidden">
-                                                        {/* Dynamic Progress Bar Width */}
                                                         <div 
                                                             className="bg-[#4edea3] h-full rounded-full shadow-[0_0_8px_rgba(78,222,163,0.5)]" 
                                                             style={{ width: `${Math.min((user.wpm / 150) * 100, 100)}%` }}

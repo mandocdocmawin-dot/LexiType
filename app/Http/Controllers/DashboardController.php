@@ -21,7 +21,7 @@ class DashboardController extends Controller
         // 2. Fetch Latest Feedback Inbox
         $feedbacks = UserFeedback::with('user:id,name')
             ->latest()
-            ->take(5)
+            ->take(11)
             ->get()
             ->map(function ($feedback) {
                 return [
@@ -75,7 +75,7 @@ class DashboardController extends Controller
             ],
             'feedbacks' => $feedbacks,
             'activeUsers' => $activeUsers,
-            'systemHealth' => $systemHealth, // --- NEW: Passed to frontend ---
+            'systemHealth' => $systemHealth, 
         ]);
     }
 }
