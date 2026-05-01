@@ -1,5 +1,5 @@
 import React from 'react';
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import Navbar from '@/Components/Navbar';
 
 export default function Dashboard({ auth, stats, feedbacks, activeUsers, systemHealth }) {
@@ -105,15 +105,17 @@ export default function Dashboard({ auth, stats, feedbacks, activeUsers, systemH
                                                 </div>
                                             ))}
                                             
-                                            {/* Triggers if the backend passed 11 items */}
                                             {feedbacks.length > 10 && (
-                                                <div className="pt-4 flex justify-center">
-                                                    <button className="flex items-center gap-2 px-6 py-2 rounded-full border border-[#444656]/50 text-sm font-medium text-[#c5c5d9] hover:text-[#bbc3ff] hover:bg-[#bbc3ff]/5 hover:border-[#bbc3ff]/30 transition-all group">
-                                                        View All Feedbacks
-                                                        <span className="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
-                                                    </button>
-                                                </div>
-                                            )}
+    <div className="pt-4 flex justify-center">
+        <Link 
+            href={route('admin.feedback.index')}
+            className="flex items-center gap-2 px-6 py-2 rounded-full border border-[#444656]/50 text-sm font-medium text-[#c5c5d9] hover:text-[#bbc3ff] hover:bg-[#bbc3ff]/5 hover:border-[#bbc3ff]/30 transition-all group"
+        >
+            View All Feedbacks
+            <span className="material-symbols-outlined text-sm group-hover:translate-x-1 transition-transform">arrow_forward</span>
+        </Link>
+    </div>
+)}
                                         </>
                                     ) : (
                                         <div className="py-12 flex flex-col items-center justify-center text-[#c5c5d9]">
