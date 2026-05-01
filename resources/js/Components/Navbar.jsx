@@ -31,7 +31,14 @@ export default function Navbar({ auth }) {
                     
                     {auth?.user ? (
                         <nav className="hidden md:flex items-center gap-8 text-sm font-semibold tracking-wide">
-                            <Link href="/dashboard" className={navLinkClasses('/dashboard')}>Dashboard</Link>
+                            {/* Added Home link for all authenticated users */}
+                            <Link href="/" className={navLinkClasses('/')}>Home</Link>
+                            
+                            {/* Renamed to Overview and restricted to Admins only */}
+                            {auth.user.role === 'admin' && (
+                                <Link href="/dashboard" className={navLinkClasses('/dashboard')}>Overview</Link>
+                            )}
+                            
                             <button 
                                 onClick={() => setIsAboutOpen(true)} 
                                 className="text-slate-400 hover:text-white transition-colors"

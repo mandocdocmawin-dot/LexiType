@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 
 const Leaderboard = ({ onClose }) => { 
-  // Tinanggal na natin ang isLoggedIn prop
   const [leaderboardData, setLeaderboardData] = useState([]);
   const [currentUserStats, setCurrentUserStats] = useState(null); 
-  const [isAuthenticated, setIsAuthenticated] = useState(false); // Bagong state para sa Auth
+  const [isAuthenticated, setIsAuthenticated] = useState(false); 
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {

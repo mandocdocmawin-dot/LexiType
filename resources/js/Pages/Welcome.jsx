@@ -319,7 +319,7 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
         setAccuracy(finalAccuracy);
         setStatus('finished');
 
-        if (!auth.user) return; 
+        if (!auth.user || auth.user.role === 'admin') return;
 
         try {
             const difficultyLabel = activeDifficulty === 1 ? 'easy' : (activeDifficulty === 3 ? 'hard' : 'medium');
