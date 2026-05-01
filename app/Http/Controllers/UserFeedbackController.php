@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\UserFeedback; // Assuming you have a model for the user_feedbacks table
+use App\Models\UserFeedback;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
