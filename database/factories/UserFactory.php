@@ -30,6 +30,12 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
+            'role' => fake()->randomElement(['Member', 'Moderator', 'Administrator']),
+            'status' => fake()->randomElement(['Active', 'Suspended', 'Pending']),
+            'accuracy' => fake()->randomFloat(2, 80, 99),
+            'account_type' => fake()->randomElement(['free', 'premium']),
+            'mfa_enabled' => fake()->boolean(30),
+            'last_login_at' => fake()->dateTimeThisMonth(),
         ];
     }
 

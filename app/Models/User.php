@@ -13,7 +13,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
-#[Fillable(['name', 'email', 'password', 'role'])]  
+#[Fillable(['name', 'email', 'password', 'role', 'status', 'accuracy', 'account_type', 'mfa_enabled', 'last_login_at'])]  
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable  
 {
