@@ -89,7 +89,7 @@ export default function AboutApp({ isOpen, onClose }) {
                                 <kbd className="bg-[#2d3449] px-3 py-1.5 rounded text-xs font-mono text-[#bbc3ff] border border-white/20">Ctrl + Shift + A</kbd>
                             </div>
                             <div className="flex justify-between items-center py-2.5 border-b border-white/10">
-                                <span className="text-slate-400 text-sm">Command Palette</span>
+                                <span className="text-slate-400 text-sm">Close Tab</span>
                                 <kbd className="bg-[#2d3449] px-3 py-1.5 rounded text-xs font-mono text-[#bbc3ff] border border-white/20">Esc</kbd>
                             </div>
                         </div>
