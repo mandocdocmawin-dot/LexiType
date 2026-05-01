@@ -31,6 +31,13 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
     const [isAiModalOpen, setIsAiModalOpen] = useState(false);
     const [textsCache, setTextsCache] = useState({});
 
+    const modeRef = useRef({ category: activeCategory, difficulty: activeDifficulty });
+
+    // I-update ang tracker tuwing nagbabago ang mode
+    useEffect(() => {
+        modeRef.current = { category: activeCategory, difficulty: activeDifficulty };
+    }, [activeCategory, activeDifficulty]);
+
     // Refs for real-time access
     const inputRef = useRef(null);
     const timerRef = useRef(null);
@@ -159,29 +166,57 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
         };
 
         const handleGlobalKeydown = (e) => {
-            // 1. Handle Escape Key Hierarchy (Priority matching)
+            const isModifierPressed = e.ctrlKey || e.metaKey;
+            const isShiftPressed = e.shiftKey;
+
+            // Ctrl + Shift + A para sa AI Chat Modal
+            if (isModifierPressed && isShiftPressed && e.code === 'KeyA') {
+                e.preventDefault(); 
+                if (auth?.user) {
+                    setIsAiModalOpen(prev => !prev);
+                } else {
+                    alert('Please log in to chat with your AI Coach!');
+                }
+                return; 
+            }
+
+            // Alt + M para magpalit ng mode nang dynamic!
+            if (e.altKey && e.code === 'KeyM') {
+                e.preventDefault();
+                
+                // Kukunin natin ang pinaka-updated na mode mula sa ating modeRef
+                const currentCategory = modeRef.current.category;
+                const currentDifficulty = modeRef.current.difficulty;
+                
+                const modes = ['snippet', 'words', 'quote']; 
+                const currentIndex = modes.indexOf(currentCategory);
+                const nextMode = modes[(currentIndex + 1) % modes.length]; 
+                
+                // Ipasa ang tamang nextMode sa iyong function
+                changeGameMode(nextMode, currentDifficulty);
+                return;
+            }
+
             if (e.key === 'Escape') {
                 if (isAiModalOpen) {
                     setIsAiModalOpen(false);
-                    return; // Stop here, only close AI modal
+                    return; 
                 }
                 if (isFeedbackModalOpen) {
                     setIsFeedbackModalOpen(false);
-                    return; // Stop here, only close Feedback modal
+                    return; 
                 }
                 if (status === 'finished') {
                     resetTest();
-                    return; // Stop here, reset the typing test session
+                    return; 
                 }
             }
 
-            // 2. Prevent auto-focusing if any overlay or the finished state is active
             if (isFeedbackModalOpen || isAiModalOpen || status === 'finished' || document.activeElement === inputRef.current) {
                 return;
             }
             
-            // 3. Auto-focus on regular character typing
-            if (e.key.length === 1 && inputRef.current) {
+            if (e.key.length === 1 && !e.altKey && !e.ctrlKey && !e.metaKey && inputRef.current) {
                 inputRef.current.focus();
                 setShowFocusHint(false);
             }
@@ -190,12 +225,11 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
         window.addEventListener('click', handleGlobalClick);
         window.addEventListener('keydown', handleGlobalKeydown);
         
-        // Cleanup event listeners on unmount or dependency change
         return () => {
             window.removeEventListener('click', handleGlobalClick);
             window.removeEventListener('keydown', handleGlobalKeydown);
         };
-    }, [status, isFeedbackModalOpen, isAiModalOpen]); 
+    }, [status, isFeedbackModalOpen, isAiModalOpen, auth?.user]);
 
     // Timer
     useEffect(() => {
@@ -224,6 +258,10 @@ export default function Welcome({ auth, laravelVersion, phpVersion }) {
     // Handle Keystrokes (Strict Error Handling applied)
     const handleKeyDown = (e) => {
         if (status === 'finished') return;
+
+        if (e.altKey || e.ctrlKey || e.metaKey) {
+            return;
+        }
 
         if (e.key === 'Tab') {
             e.preventDefault();
