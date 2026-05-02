@@ -49,7 +49,7 @@ Route::middleware('auth')->group(function () {
 Route::get('/api/leaderboard', [LeaderboardController::class, 'index'])->name('leaderboard.api');
 
 // --- ADMIN ROUTES ---
-Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::resource('feedback', UserFeedbackController::class)->only(['index', 'show', 'destroy']);
 });
 

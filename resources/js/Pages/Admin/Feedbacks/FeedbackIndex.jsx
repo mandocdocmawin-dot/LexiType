@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Head, useForm, Link, router } from '@inertiajs/react';
+import { Head, useForm, Link, router, usePage } from '@inertiajs/react';
 
 export default function FeedbackIndex({ feedbacks }) {
     const { delete: destroy } = useForm();
+    const { auth } = usePage().props;
 
     // --- Pagination State & Logic (Referenced from Stats.jsx) ---
     const [pageInput, setPageInput] = useState(feedbacks?.current_page || 1);
@@ -164,13 +165,16 @@ export default function FeedbackIndex({ feedbacks }) {
                                                     <span className="material-symbols-outlined text-[18px]">visibility</span>
                                                     View
                                                 </Link>
-                                                <button 
-                                                    onClick={() => handleDelete(feedback.id)}
-                                                    className="inline-flex items-center justify-center gap-1.5 text-[#ff4757] border border-[#ff4757]/30 hover:bg-[#ff4757]/10 px-4 py-1.5 rounded text-sm font-medium transition-colors opacity-80 hover:opacity-100"
-                                                >
-                                                    <span className="material-symbols-outlined text-[18px]">delete</span>
-                                                    Delete
-                                                </button>
+                                                
+                                                {auth.user && auth.user.role === 'admin' && (
+                                                    <button 
+                                                        onClick={() => handleDelete(feedback.id)}
+                                                        className="inline-flex items-center justify-center gap-1.5 text-[#ff4757] border border-[#ff4757]/30 hover:bg-[#ff4757]/10 px-4 py-1.5 rounded text-sm font-medium transition-colors opacity-80 hover:opacity-100"
+                                                    >
+                                                        <span className="material-symbols-outlined text-[18px]">delete</span>
+                                                        Delete
+                                                    </button>
+                                                )}
                                             </td>
                                         </tr>
                                     ))
