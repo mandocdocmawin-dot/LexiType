@@ -14,7 +14,7 @@ class UserFeedbackController extends Controller
     public function index()
     {
         // Fetch feedbacks with the associated user data, ordered by newest first
-        $feedbacks = UserFeedback::with('user')->latest()->get();
+        $feedbacks = UserFeedback::with('user')->latest()->paginate(7);
 
         return Inertia::render('Admin/Feedbacks/FeedbackIndex', [
             'feedbacks' => $feedbacks

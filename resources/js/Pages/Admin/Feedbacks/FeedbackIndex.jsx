@@ -1,9 +1,37 @@
-import React from 'react';
-import { Head, useForm, Link } from '@inertiajs/react';
+import React, { useState, useEffect } from 'react';
+import { Head, useForm, Link, router } from '@inertiajs/react';
 
 export default function FeedbackIndex({ feedbacks }) {
-    console.log("Inertia Payload:", feedbacks);
     const { delete: destroy } = useForm();
+
+    // --- Pagination State & Logic (Referenced from Stats.jsx) ---
+    const [pageInput, setPageInput] = useState(feedbacks?.current_page || 1);
+
+    // Sync input if current_page changes externally (e.g., clicking Next/Prev)
+    useEffect(() => {
+        setPageInput(feedbacks?.current_page || 1);
+    }, [feedbacks?.current_page]);
+
+    // Handle Direct Page Jump (Enter key or Blur)
+    const handlePageJump = (e) => {
+        if (e.key === 'Enter' || e.type === 'blur') {
+            let page = parseInt(pageInput);
+            
+            // Validate the input
+            if (isNaN(page) || page < 1) page = 1;
+            if (page > feedbacks.last_page) page = feedbacks.last_page;
+            
+            setPageInput(page);
+
+            // Navigate only if the page actually changed
+            if (page !== feedbacks.current_page) {
+                router.get(route('admin.feedback.index'), { page: page }, { 
+                    preserveState: true, 
+                    preserveScroll: true 
+                });
+            }
+        }
+    };
 
     const handleDelete = (id) => {
         if (confirm('Are you sure you want to delete this feedback?')) {
@@ -13,10 +41,8 @@ export default function FeedbackIndex({ feedbacks }) {
         }
     };
 
-    // FIXED: Date formatting function
     const formatDateTime = (dateString) => {
         if (!dateString) return 'N/A';
-        // Replace space with 'T' to ensure cross-browser compatibility (e.g., Safari)
         const safeString = dateString.replace(' ', 'T'); 
         const date = new Date(safeString);
         
@@ -96,7 +122,8 @@ export default function FeedbackIndex({ feedbacks }) {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-[#444656]/10">
-                                {feedbacks.length === 0 ? (
+                                {/* IMPORTANT: Changed from feedbacks.length to feedbacks.data.length */}
+                                {!feedbacks.data || feedbacks.data.length === 0 ? (
                                     <tr>
                                         <td colSpan="5" className="p-12 text-center text-[#c5c5d9]">
                                             <div className="flex flex-col items-center justify-center">
@@ -106,7 +133,7 @@ export default function FeedbackIndex({ feedbacks }) {
                                         </td>
                                     </tr>
                                 ) : (
-                                    feedbacks.map((feedback) => (
+                                    feedbacks.data.map((feedback) => (
                                         <tr key={feedback.id} className="hover:bg-[#222a3d]/50 transition-colors group">
                                             <td className="p-5 align-top">
                                                 <div className="font-bold text-white font-headline">
@@ -122,7 +149,6 @@ export default function FeedbackIndex({ feedbacks }) {
                                                 </span>
                                             </td>
                                             <td className="p-5 align-top text-sm text-[#c5c5d9] max-w-md whitespace-pre-wrap leading-relaxed">
-                                                {/* Optionally truncate long messages so the table stays neat */}
                                                 <div className="line-clamp-2">
                                                     {feedback.message}
                                                 </div>
@@ -130,8 +156,6 @@ export default function FeedbackIndex({ feedbacks }) {
                                             <td className="p-5 align-top text-sm text-[#c5c5d9] whitespace-nowrap font-medium">
                                                 {formatDateTime(feedback.created_at)}
                                             </td>
-                                            
-                                            {/* UPDATED: Actions Column with View and Delete */}
                                             <td className="p-5 align-top text-right space-x-2">
                                                 <Link 
                                                     href={route('admin.feedback.show', feedback.id)}
@@ -154,6 +178,46 @@ export default function FeedbackIndex({ feedbacks }) {
                             </tbody>
                         </table>
                     </div>
+
+                    {/* --- PAGINATION CONTROLS --- */}
+                    {feedbacks?.last_page > 1 && (
+                        <div className="flex items-center justify-between p-6 bg-[#131b2e] border-t border-[#444656]/10 rounded-b-xl">
+                            
+                            {/* Previous Button */}
+                            <button
+                                onClick={() => feedbacks.prev_page_url && router.get(feedbacks.prev_page_url, {}, { preserveState: true, preserveScroll: true })}
+                                disabled={!feedbacks.prev_page_url}
+                                className="px-5 py-2 text-sm font-semibold text-slate-400 bg-[#222a3d] rounded-lg hover:text-white hover:bg-[#3d5afe]/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                            >
+                                Previous
+                            </button>
+                            
+                            {/* Input Field / Total Pages */}
+                            <div className="flex items-center gap-3 text-sm text-slate-400 font-headline">
+                                <input
+                                    type="number"
+                                    value={pageInput}
+                                    onChange={(e) => setPageInput(e.target.value)}
+                                    onKeyDown={handlePageJump}
+                                    onBlur={handlePageJump}
+                                    className="w-16 text-center bg-[#131b2e] border border-[#444656]/30 rounded-md text-white focus:ring-2 focus:ring-[#3d5afe]/50 focus:border-[#3d5afe] outline-none py-1.5 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-all"
+                                    min="1"
+                                    max={feedbacks.last_page}
+                                />
+                                <span>/ {feedbacks.last_page}</span>
+                            </div>
+                            
+                            {/* Next Button */}
+                            <button
+                                onClick={() => feedbacks.next_page_url && router.get(feedbacks.next_page_url, {}, { preserveState: true, preserveScroll: true })}
+                                disabled={!feedbacks.next_page_url}
+                                className="px-5 py-2 text-sm font-semibold text-slate-400 bg-[#222a3d] rounded-lg hover:text-white hover:bg-[#3d5afe]/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                            >
+                                Next
+                            </button>
+
+                        </div>
+                    )}
                 </div>
             </div>
         </>
