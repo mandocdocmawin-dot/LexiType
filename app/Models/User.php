@@ -53,11 +53,6 @@ class User extends Authenticatable
         return $this->hasMany(SystemTypingText::class, 'user_id');
     }
 
-    public function aiRecommendations(): HasMany
-    {
-        return $this->hasMany(AIRecommendation::class, 'user_id');
-    }
-
     public function stats(): HasOne
     {
         return $this->hasOne(UserStat::class, 'user_id');
