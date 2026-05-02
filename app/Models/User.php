@@ -13,7 +13,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
-#[Fillable(['name', 'email', 'password', 'role'])]  
+#[Fillable(['name', 'email', 'password', 'role', 'bio'])]  
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable  
 {
@@ -37,11 +37,6 @@ class User extends Authenticatable
     {
         return $this->role === 'admin';
     }   
-
-    public function profile(): HasOne
-    {
-        return $this->hasOne(UserProfile::class, 'user_id');
-    }
 
     public function feedbacks(): HasMany
     {
