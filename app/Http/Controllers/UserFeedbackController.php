@@ -16,7 +16,7 @@ class UserFeedbackController extends Controller
         // Fetch feedbacks with the associated user data, ordered by newest first
         $feedbacks = UserFeedback::with('user')->latest()->get();
 
-        return Inertia::render('Admin/FeedbackIndex', [
+        return Inertia::render('Admin/Feedbacks/FeedbackIndex', [
             'feedbacks' => $feedbacks
         ]);
     }
@@ -39,6 +39,19 @@ class UserFeedbackController extends Controller
         ]);
 
         return redirect()->back()->with('success', 'Feedback submitted successfully.');
+    }
+
+    /**
+     * Retrieve and display a specific feedback record.
+     */
+    public function show($id)
+    {
+        // Fetch the specific feedback and include the associated user
+        $feedback = UserFeedback::with('user')->findOrFail($id);
+
+        return Inertia::render('Admin/Feedbacks/show', [
+            'feedback' => $feedback
+        ]);
     }
 
     /**

@@ -50,7 +50,7 @@ Route::get('/api/leaderboard', [LeaderboardController::class, 'index'])->name('l
 
 // --- ADMIN ROUTES ---
 Route::middleware(['auth'])->prefix('admin')->name('admin.')->group(function () {
-    Route::resource('feedback', UserFeedbackController::class)->only(['index', 'destroy']);
+    Route::resource('feedback', UserFeedbackController::class)->only(['index', 'show', 'destroy']);
 });
 
 require __DIR__.'/auth.php';

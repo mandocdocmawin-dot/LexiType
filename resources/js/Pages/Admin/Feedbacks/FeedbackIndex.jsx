@@ -2,6 +2,7 @@ import React from 'react';
 import { Head, useForm, Link } from '@inertiajs/react';
 
 export default function FeedbackIndex({ feedbacks }) {
+    console.log("Inertia Payload:", feedbacks);
     const { delete: destroy } = useForm();
 
     const handleDelete = (id) => {
@@ -12,9 +13,15 @@ export default function FeedbackIndex({ feedbacks }) {
         }
     };
 
-    // Helper function to format the timestamp into "Nov 12, 2026 • 02:30 PM"
+    // FIXED: Date formatting function
     const formatDateTime = (dateString) => {
-        const date = new Date(dateString);
+        if (!dateString) return 'N/A';
+        // Replace space with 'T' to ensure cross-browser compatibility (e.g., Safari)
+        const safeString = dateString.replace(' ', 'T'); 
+        const date = new Date(safeString);
+        
+        if (isNaN(date.getTime())) return 'Invalid Date';
+
         const formattedDate = date.toLocaleDateString('en-US', {
             month: 'short',
             day: 'numeric',
@@ -53,7 +60,6 @@ export default function FeedbackIndex({ feedbacks }) {
 
             <div className="min-h-screen bg-[#0b1326] text-[#dae2fd] font-body selection:bg-[#3d5afe] selection:text-[#f1f0ff] p-6 md:p-8">
                 
-                {/* Optional Top Navigation/Back Button */}
                 <div className="max-w-7xl mx-auto mb-6">
                     <Link 
                         href={route('dashboard')} 
@@ -66,7 +72,6 @@ export default function FeedbackIndex({ feedbacks }) {
 
                 <div className="max-w-7xl mx-auto bg-[#131b2e] rounded-xl border-none shadow-[0px_20px_40px_rgba(6,14,32,0.4)] overflow-hidden flex flex-col">
                     
-                    {/* Header Section */}
                     <div className="p-8 border-b border-[#444656]/10 flex justify-between items-center">
                         <div className="flex items-center gap-4">
                             <div className="w-12 h-12 rounded-xl bg-[#bbc3ff]/10 flex items-center justify-center text-[#bbc3ff]">
@@ -79,7 +84,6 @@ export default function FeedbackIndex({ feedbacks }) {
                         </div>
                     </div>
 
-                    {/* Table Section */}
                     <div className="overflow-x-auto custom-scrollbar">
                         <table className="w-full text-left border-collapse">
                             <thead>
@@ -118,16 +122,29 @@ export default function FeedbackIndex({ feedbacks }) {
                                                 </span>
                                             </td>
                                             <td className="p-5 align-top text-sm text-[#c5c5d9] max-w-md whitespace-pre-wrap leading-relaxed">
-                                                {feedback.message}
+                                                {/* Optionally truncate long messages so the table stays neat */}
+                                                <div className="line-clamp-2">
+                                                    {feedback.message}
+                                                </div>
                                             </td>
                                             <td className="p-5 align-top text-sm text-[#c5c5d9] whitespace-nowrap font-medium">
                                                 {formatDateTime(feedback.created_at)}
                                             </td>
-                                            <td className="p-5 align-top text-right">
+                                            
+                                            {/* UPDATED: Actions Column with View and Delete */}
+                                            <td className="p-5 align-top text-right space-x-2">
+                                                <Link 
+                                                    href={route('admin.feedback.show', feedback.id)}
+                                                    className="inline-flex items-center justify-center gap-1.5 text-[#bbc3ff] border border-[#bbc3ff]/30 hover:bg-[#bbc3ff]/10 px-4 py-1.5 rounded text-sm font-medium transition-colors opacity-80 hover:opacity-100"
+                                                >
+                                                    <span className="material-symbols-outlined text-[18px]">visibility</span>
+                                                    View
+                                                </Link>
                                                 <button 
                                                     onClick={() => handleDelete(feedback.id)}
-                                                    className="text-[#ff4757] border border-[#ff4757]/30 hover:bg-[#ff4757]/10 px-4 py-1.5 rounded text-sm font-medium transition-colors opacity-80 hover:opacity-100"
+                                                    className="inline-flex items-center justify-center gap-1.5 text-[#ff4757] border border-[#ff4757]/30 hover:bg-[#ff4757]/10 px-4 py-1.5 rounded text-sm font-medium transition-colors opacity-80 hover:opacity-100"
                                                 >
+                                                    <span className="material-symbols-outlined text-[18px]">delete</span>
                                                     Delete
                                                 </button>
                                             </td>
