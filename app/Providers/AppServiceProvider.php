@@ -7,6 +7,10 @@ use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Gate;
 use App\Models\UserFeedback;
 use App\Policies\UserFeedbackPolicy;
+use App\Models\SystemTypingText;
+use App\Policies\SystemTypingTextPolicy;
+use App\Models\User;
+use App\Policies\UserPolicy;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -28,5 +32,6 @@ class AppServiceProvider extends ServiceProvider
         // I-link ang Model sa Policy
         Gate::policy(UserFeedback::class, UserFeedbackPolicy::class);
         Gate::policy(User::class, UserPolicy::class);
+        Gate::policy(SystemTypingText::class, SystemTypingTextPolicy::class);
     }
 }

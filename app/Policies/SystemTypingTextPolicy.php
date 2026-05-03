@@ -18,7 +18,7 @@ class SystemTypingTextPolicy
     /**
      * Determine whether the user can view the exercise.
      */
-    public function view(User $user, SystemTypingText $exercise): bool
+    public function view(User $user, SystemTypingText $typingText): bool
     {
         return $user->isAdmin();
     }
@@ -34,7 +34,7 @@ class SystemTypingTextPolicy
     /**
      * Determine whether the user can update the exercise.
      */
-    public function update(User $user, SystemTypingText $exercise): bool
+    public function update(User $user, SystemTypingText $typingText): bool
     {
         return $user->isAdmin();
     }
@@ -42,7 +42,7 @@ class SystemTypingTextPolicy
     /**
      * Determine whether the user can delete the exercise.
      */
-    public function delete(User $user, SystemTypingText $exercise): bool
+    public function delete(User $user, SystemTypingText $typingText): bool
     {
         return $user->isAdmin();
     }

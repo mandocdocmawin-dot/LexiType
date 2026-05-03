@@ -49,8 +49,6 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/ai-analysis', [AIAnalysisController::class, 'getAnalysis']);
 
-    // Custom Exercises
-    Route::resource('custom-exercises', CustomExerciseController::class);
 });
 
 Route::get('/api/leaderboard', [LeaderboardController::class, 'index'])->name('leaderboard.api');

@@ -44,10 +44,7 @@ class User extends Authenticatable
         return $this->hasMany(UserFeedback::class, 'user_id');
     }
 
-    public function customExercises(): HasMany
-    {
-        return $this->hasMany(CustomExercise::class, 'user_id');
-    }
+
 
     public function systemTypingTexts(): HasMany
     {

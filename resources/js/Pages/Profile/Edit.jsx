@@ -81,10 +81,10 @@ export default function Edit({ mustVerifyEmail, status }) {
                                     <div>
                                         <div className="flex items-center justify-center md:justify-start gap-3">
                                             <span className="font-headline text-3xl font-bold">{user.name}</span>
-                                            <span className="px-2 py-0.5 bg-primary-container/20 text-primary text-[10px] uppercase font-bold tracking-widest rounded-full border border-primary/20">Pro Member</span>
+                                            <span className="px-2 py-0.5 bg-primary-container/20 text-primary text-[10px] uppercase font-bold tracking-widest rounded-full border border-primary/20">Pro User</span>
                                         </div>
                                         <p className="text-on-surface-variant text-sm font-body mt-1">
-                                            Member since {user.created_at ? new Date(user.created_at).toLocaleString('default', { month: 'long', year: 'numeric' }) : '—'}
+                                            User since {user.created_at ? new Date(user.created_at).toLocaleString('default', { month: 'long', year: 'numeric' }) : '—'}
                                         </p>
                                     </div>
                                     

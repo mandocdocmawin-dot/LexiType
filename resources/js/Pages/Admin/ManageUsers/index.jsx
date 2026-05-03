@@ -337,37 +337,31 @@ export default function ManageUsersIndex({ users = [], filters = {} }) {
                         </tbody>
                     </table>
                     {/* --- PAGINATION CONTROLS --- */}
-                    {(pagination?.last_page ?? lastPage) > 1 && (
+                    {list.length > 0 && (
                         <div className="flex items-center justify-between p-6 border-t border-[#444656]/10 rounded-b-xl" style={{ background: '#131b2e' }}>
-                            <button
-                                onClick={() => prevUrl ? router.get(prevUrl, {}, { preserveState: true, preserveScroll: true }) : (currentPage > 1 && router.get(route('admin.users.index'), { search, page: currentPage - 1 }, { preserveState: true, preserveScroll: true }))}
-                                disabled={!prevUrl && currentPage <= 1}
-                                className="px-5 py-2 text-sm font-semibold text-slate-400 bg-[#222a3d] rounded-lg hover:text-white hover:bg-[#3d5afe]/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                            >
-                                Previous
-                            </button>
+                            <span className="text-sm font-medium" style={{ color: '#8e8fa2' }}>
+                                Showing {pagination ? ((currentPage - 1) * pagination.per_page + 1) : 1}-{pagination ? Math.min(currentPage * pagination.per_page, pagination.total) : list.length} of {pagination ? pagination.total : list.length} users
+                            </span>
                             
-                            <div className="flex items-center gap-3 text-sm text-slate-400">
-                                <input
-                                    type="number"
-                                    value={pageInput}
-                                    onChange={(e) => setPageInput(e.target.value)}
-                                    onKeyDown={handlePageJump}
-                                    onBlur={handlePageJump}
-                                    className="w-16 text-center bg-[#131b2e] border border-[#444656]/30 rounded-md text-white focus:ring-2 focus:ring-[#3d5afe]/50 focus:border-[#3d5afe] outline-none py-1.5 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-all"
-                                    min="1"
-                                    max={pagination?.last_page ?? lastPage}
-                                />
-                                <span>/ {pagination?.last_page ?? lastPage}</span>
+                            <div className="flex items-center gap-6 text-[10px] font-bold uppercase tracking-widest" style={{ color: '#64748b' }}>
+                                <button
+                                    onClick={() => prevUrl ? router.get(prevUrl, {}, { preserveState: true, preserveScroll: true }) : (currentPage > 1 && router.get(route('admin.users.index'), { search, page: currentPage - 1 }, { preserveState: true, preserveScroll: true }))}
+                                    disabled={!prevUrl && currentPage <= 1}
+                                    className="flex items-center gap-1 hover:text-[#dae2fd] transition-colors disabled:opacity-30 disabled:hover:text-[#64748b]"
+                                >
+                                    &lt; PREV
+                                </button>
+                                
+                                <span>{currentPage} / {lastPage}</span>
+                                
+                                <button
+                                    onClick={() => nextUrl ? router.get(nextUrl, {}, { preserveState: true, preserveScroll: true }) : (currentPage < lastPage && router.get(route('admin.users.index'), { search, page: currentPage + 1 }, { preserveState: true, preserveScroll: true }))}
+                                    disabled={!nextUrl && currentPage >= lastPage}
+                                    className="flex items-center gap-1 hover:text-[#dae2fd] transition-colors disabled:opacity-30 disabled:hover:text-[#64748b]"
+                                >
+                                    NEXT &gt;
+                                </button>
                             </div>
-                            
-                            <button
-                                onClick={() => nextUrl ? router.get(nextUrl, {}, { preserveState: true, preserveScroll: true }) : (currentPage < (pagination?.last_page ?? lastPage) && router.get(route('admin.users.index'), { search, page: currentPage + 1 }, { preserveState: true, preserveScroll: true }))}
-                                disabled={!nextUrl && currentPage >= (pagination?.last_page ?? lastPage)}
-                                className="px-5 py-2 text-sm font-semibold text-slate-400 bg-[#222a3d] rounded-lg hover:text-white hover:bg-[#3d5afe]/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                            >
-                                Next
-                            </button>
                         </div>
                     )}
                 </div>
