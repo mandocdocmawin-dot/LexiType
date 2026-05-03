@@ -50,10 +50,10 @@ function InfoRow({ label, value, color }) {
 }
 
 function roleBadge(role) {
-    const colors = { Administrator: '#818cf8', Member: '#64748b' };
+    const colors = { Administrator: '#818cf8', User: '#64748b' };
     return (
         <span className="text-xs font-bold px-3 py-1 rounded-lg" style={{ background: 'rgba(99,102,241,0.1)', color: colors[role] ?? '#64748b' }}>
-            {(role ?? 'Member').toUpperCase()}
+            {(role ?? 'User').toUpperCase()}
         </span>
     );
 }

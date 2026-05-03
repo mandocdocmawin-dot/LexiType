@@ -26,7 +26,7 @@ function Avatar({ name, size = 56 }) {
 }
 
 export default function EditUser({ user }) {
-    const [form, setForm] = useState({ name: user.name ?? '', email: user.email ?? '', role: user.role ?? 'user', status: user.status ?? 'Active' });
+    const [form, setForm] = useState({ name: user.name ?? '', email: user.email ?? '', role: user.role ?? 'User', status: user.status ?? 'Active' });
     const [errors, setErrors] = useState({});
     const [submitting, setSubmitting] = useState(false);
 
@@ -80,20 +80,12 @@ export default function EditUser({ user }) {
                                 {errors.email && <p className="text-xs mt-1" style={{ color: '#ffb2b7' }}>{errors.email}</p>}
                             </FIELD>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <FIELD label="Role">
-                                    <select value={form.role} onChange={e => set('role', e.target.value)} className={inputCls} style={inputStyle}>
-                                        {['user', 'admin'].map(r => <option key={r} value={r} style={{ background: '#171f33' }}>{r}</option>)}
-                                    </select>
-                                    {errors.role && <p className="text-xs mt-1" style={{ color: '#ffb2b7' }}>{errors.role}</p>}
-                                </FIELD>
-                                <FIELD label="Status">
-                                    <select value={form.status} onChange={e => set('status', e.target.value)} className={inputCls} style={inputStyle}>
-                                        {['Active', 'Suspended', 'Pending'].map(s => <option key={s} value={s} style={{ background: '#171f33' }}>{s}</option>)}
-                                    </select>
-                                    {errors.status && <p className="text-xs mt-1" style={{ color: '#ffb2b7' }}>{errors.status}</p>}
-                                </FIELD>
-                            </div>
+                            <FIELD label="Role">
+                                <select value={form.role} onChange={e => set('role', e.target.value)} className={inputCls} style={inputStyle}>
+                                    {['User', 'Administrator'].map(r => <option key={r} value={r} style={{ background: '#171f33' }}>{r}</option>)}
+                                </select>
+                                {errors.role && <p className="text-xs mt-1" style={{ color: '#ffb2b7' }}>{errors.role}</p>}
+                            </FIELD>
 
                             <div className="flex items-center justify-end gap-4 pt-4" style={{ borderTop: '1px solid rgba(68,70,86,0.2)' }}>
                                 <Link href={route('admin.users.index')} className="px-6 py-2.5 rounded-xl text-sm font-semibold" style={{ background: '#222a3d', color: '#c5c5d9' }}>

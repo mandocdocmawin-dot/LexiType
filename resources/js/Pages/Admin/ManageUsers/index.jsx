@@ -263,10 +263,11 @@ export default function ManageUsersIndex({ users = [], filters = {} }) {
 
 
             {/* ── Content ── */}
-            <section className="px-8 pb-8 pt-24 flex flex-col h-screen overflow-hidden gap-6">
+            {/* Added mt-20 to push this section down below the Navbar */}
+            <section className="p-8 mt-20 space-y-8 flex-1">
 
-                {/* Filter Bar (flex-none ensures it doesn't shrink) */}
-                <div className="flex-none flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-6 rounded-xl" style={{ background: '#131b2e' }}>
+                {/* Filter Bar */}
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-6 rounded-xl" style={{ background: '#131b2e' }}>
                     <div className="relative flex-1 max-w-lg">
                         <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2" style={{ color: '#8e8fa2' }}>search</span>
                         <input type="text" placeholder="Search by username, email or ID..."
@@ -283,96 +284,84 @@ export default function ManageUsersIndex({ users = [], filters = {} }) {
                     </div>
                 </div>
 
-                {/* Table Container (flex-1 and min-h-0 forces it to fit inside the screen) */}
-                <div className="flex flex-col flex-1 min-h-0 rounded-xl overflow-hidden" style={{ background: '#131b2e' }}>
-                    
-                    {/* Makes only the table body scrollable if needed */}
-                    <div className="flex-1 overflow-y-auto">
-                        <table className="w-full text-left border-collapse">
-                            {/* Sticky Header so it stays on top */}
-                            <thead className="sticky top-0 z-10" style={{ background: '#171f33' }}>
+                {/* Table */}
+                <div className="rounded-xl overflow-hidden" style={{ background: '#131b2e' }}>
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr style={{ background: '#171f33' }}>
+                                {['User', 'Email Address', 'Joined Date', 'Actions'].map((col, i) => (
+                                    <th key={col} className={`px-6 py-4 text-[11px] uppercase font-bold tracking-[0.15em]${i === 3 ? ' text-right' : ''}`} style={{ color: '#8e8fa2' }}>
+                                        {col}
+                                    </th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody style={{ borderTop: '1px solid rgba(68,70,86,0.1)' }}>
+                            {list.length === 0 ? (
                                 <tr>
-                                    {['User', 'Email Address', 'Joined Date', 'Actions'].map((col, i) => (
-                                        <th key={col} className={`px-6 py-4 text-[11px] uppercase font-bold tracking-[0.15em]${i === 3 ? ' text-right' : ''}`} style={{ color: '#8e8fa2' }}>
-                                            {col}
-                                        </th>
-                                    ))}
+                                    <td colSpan={4} className="px-6 py-20 text-center">
+                                        <span className="material-symbols-outlined block mb-3" style={{ fontSize: 48, color: '#2d3449' }}>manage_accounts</span>
+                                        <p className="text-sm" style={{ color: '#8e8fa2' }}>No users found</p>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody style={{ borderTop: '1px solid rgba(68,70,86,0.1)' }}>
-                                {list.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={4} className="px-6 py-20 text-center">
-                                            <span className="material-symbols-outlined block mb-3" style={{ fontSize: 48, color: '#2d3449' }}>manage_accounts</span>
-                                            <p className="text-sm" style={{ color: '#8e8fa2' }}>No users found</p>
+                            ) : (
+                                list.map((user, idx) => (
+                                    <tr key={user.id} onClick={() => setSelectedUser(user)} className="cursor-pointer transition-colors group">
+                                        <td className="px-6 py-5">
+                                            <div className="flex items-center gap-3">
+                                                <Avatar name={user.name} size={40} shape="rounded-lg" />
+                                                <div>
+                                                    <div className="text-sm font-bold" style={{ color: '#dae2fd' }}>{user.name}</div>
+                                                    <div className="text-[10px]" style={{ color: '#8e8fa2' }}>ID: KL-{String(user.id).padStart(5, '0')}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-5 text-sm" style={{ color: '#c5c5d9' }}>{user.email}</td>
+                                        <td className="px-6 py-5 text-sm" style={{ color: '#c5c5d9' }}>{formatDate(user.created_at)}</td>
+                                        <td className="px-6 py-5 text-right">
+                                            <div className="flex items-center justify-end gap-1">
+                                                <Link href={route('admin.users.show', user.id)} onClick={e => e.stopPropagation()} title="View" className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-indigo-500/10" style={{ color: '#818cf8' }}>
+                                                    <span className="material-symbols-outlined text-lg">visibility</span>
+                                                </Link>
+                                                <Link href={route('admin.users.edit', user.id)} onClick={e => e.stopPropagation()} title="Edit" className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-amber-500/10" style={{ color: '#f59e0b' }}>
+                                                    <span className="material-symbols-outlined text-lg">edit</span>
+                                                </Link>
+                                                <button onClick={e => { e.stopPropagation(); if(confirm(`Delete ${user.name}?`)) doDelete(user); }} title="Delete" className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-red-500/10" style={{ color: '#ffb2b7' }}>
+                                                    <span className="material-symbols-outlined text-lg">delete</span>
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
-                                ) : (
-                                    list.map((user, idx) => (
-                                        <tr key={user.id} onClick={() => setSelectedUser(user)} className="cursor-pointer transition-colors group hover:bg-[#171f33]">
-                                            <td className="px-6 py-4">
-                                                <div className="flex items-center gap-3">
-                                                    <Avatar name={user.name} size={40} shape="rounded-lg" />
-                                                    <div>
-                                                        <div className="text-sm font-bold" style={{ color: '#dae2fd' }}>{user.name}</div>
-                                                        <div className="text-[10px]" style={{ color: '#8e8fa2' }}>ID: KL-{String(user.id).padStart(5, '0')}</div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 text-sm" style={{ color: '#c5c5d9' }}>{user.email}</td>
-                                            <td className="px-6 py-4 text-sm" style={{ color: '#c5c5d9' }}>{formatDate(user.created_at)}</td>
-                                            <td className="px-6 py-4 text-right">
-                                                <div className="flex items-center justify-end gap-1">
-                                                    <Link href={route('admin.users.show', user.id)} onClick={e => e.stopPropagation()} title="View" className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-indigo-500/10" style={{ color: '#818cf8' }}>
-                                                        <span className="material-symbols-outlined text-lg">visibility</span>
-                                                    </Link>
-                                                    <Link href={route('admin.users.edit', user.id)} onClick={e => e.stopPropagation()} title="Edit" className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-amber-500/10" style={{ color: '#f59e0b' }}>
-                                                        <span className="material-symbols-outlined text-lg">edit</span>
-                                                    </Link>
-                                                    <button onClick={e => { e.stopPropagation(); if(confirm(`Delete ${user.name}?`)) doDelete(user); }} title="Delete" className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-red-500/10" style={{ color: '#ffb2b7' }}>
-                                                        <span className="material-symbols-outlined text-lg">delete</span>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-
+                                ))
+                            )}
+                        </tbody>
+                    </table>
                     {/* --- PAGINATION CONTROLS --- */}
-                    {(pagination?.last_page ?? lastPage) > 1 && (
-                        <div className="flex-none flex items-center justify-between p-6 border-t border-[#444656]/10 rounded-b-xl" style={{ background: '#131b2e' }}>
-                            <button
-                                onClick={() => prevUrl ? router.get(prevUrl, {}, { preserveState: true, preserveScroll: true }) : (currentPage > 1 && router.get(route('admin.users.index'), { search, page: currentPage - 1 }, { preserveState: true, preserveScroll: true }))}
-                                disabled={!prevUrl && currentPage <= 1}
-                                className="px-5 py-2 text-sm font-semibold text-slate-400 bg-[#222a3d] rounded-lg hover:text-white hover:bg-[#3d5afe]/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                            >
-                                Previous
-                            </button>
+                    {list.length > 0 && (
+                        <div className="flex items-center justify-between p-6 border-t border-[#444656]/10 rounded-b-xl" style={{ background: '#131b2e' }}>
+                            <span className="text-sm font-medium" style={{ color: '#8e8fa2' }}>
+                                Showing {pagination ? ((currentPage - 1) * pagination.per_page + 1) : 1}-{pagination ? Math.min(currentPage * pagination.per_page, pagination.total) : list.length} of {pagination ? pagination.total : list.length} users
+                            </span>
                             
-                            <div className="flex items-center gap-3 text-sm text-slate-400">
-                                <input
-                                    type="number"
-                                    value={pageInput}
-                                    onChange={(e) => setPageInput(e.target.value)}
-                                    onKeyDown={handlePageJump}
-                                    onBlur={handlePageJump}
-                                    className="w-16 text-center bg-[#131b2e] border border-[#444656]/30 rounded-md text-white focus:ring-2 focus:ring-[#3d5afe]/50 focus:border-[#3d5afe] outline-none py-1.5 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-all"
-                                    min="1"
-                                    max={pagination?.last_page ?? lastPage}
-                                />
-                                <span>/ {pagination?.last_page ?? lastPage}</span>
+                            <div className="flex items-center gap-6 text-[10px] font-bold uppercase tracking-widest" style={{ color: '#64748b' }}>
+                                <button
+                                    onClick={() => prevUrl ? router.get(prevUrl, {}, { preserveState: true, preserveScroll: true }) : (currentPage > 1 && router.get(route('admin.users.index'), { search, page: currentPage - 1 }, { preserveState: true, preserveScroll: true }))}
+                                    disabled={!prevUrl && currentPage <= 1}
+                                    className="flex items-center gap-1 hover:text-[#dae2fd] transition-colors disabled:opacity-30 disabled:hover:text-[#64748b]"
+                                >
+                                    &lt; PREV
+                                </button>
+                                
+                                <span>{currentPage} / {lastPage}</span>
+                                
+                                <button
+                                    onClick={() => nextUrl ? router.get(nextUrl, {}, { preserveState: true, preserveScroll: true }) : (currentPage < lastPage && router.get(route('admin.users.index'), { search, page: currentPage + 1 }, { preserveState: true, preserveScroll: true }))}
+                                    disabled={!nextUrl && currentPage >= lastPage}
+                                    className="flex items-center gap-1 hover:text-[#dae2fd] transition-colors disabled:opacity-30 disabled:hover:text-[#64748b]"
+                                >
+                                    NEXT &gt;
+                                </button>
                             </div>
-                            
-                            <button
-                                onClick={() => nextUrl ? router.get(nextUrl, {}, { preserveState: true, preserveScroll: true }) : (currentPage < (pagination?.last_page ?? lastPage) && router.get(route('admin.users.index'), { search, page: currentPage + 1 }, { preserveState: true, preserveScroll: true }))}
-                                disabled={!nextUrl && currentPage >= (pagination?.last_page ?? lastPage)}
-                                className="px-5 py-2 text-sm font-semibold text-slate-400 bg-[#222a3d] rounded-lg hover:text-white hover:bg-[#3d5afe]/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
-                            >
-                                Next
-                            </button>
                         </div>
                     )}
                 </div>

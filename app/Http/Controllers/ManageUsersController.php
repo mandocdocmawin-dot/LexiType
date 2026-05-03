@@ -120,7 +120,7 @@ class ManageUsersController extends Controller
         $validated = $request->validate([
             'name'     => 'required|string|max:255',
             'email'    => 'required|email|unique:users,email',
-            'role'     => 'required|in:Admin,User',
+            'role'     => 'required|in:Administrator,User',
             'status'   => 'required|in:Active,Suspended,Pending',
             'password' => 'required|string|min:8|confirmed',
         ]);
@@ -158,7 +158,7 @@ class ManageUsersController extends Controller
         $validated = $request->validate([
             'name'   => 'required|string|max:255',
             'email'  => 'required|email|unique:users,email,' . $user->id,
-            'role'   => 'required|in:Admin,User',
+            'role'   => 'required|in:Administrator,User',
             'status' => 'required|in:Active,Suspended,Pending',
         ]);
 

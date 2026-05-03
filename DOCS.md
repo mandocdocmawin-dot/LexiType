@@ -1,6 +1,9 @@
 # LexiType — Project Documentation
 
-A consolidated reference describing the application's key features, their implementations, data schemas, routes, and how to run the project locally. Use this file as the source to paste into other docs or README pages.
+LexiType is a comprehensive web-based typing practice platform designed to help users improve their typing speed, accuracy, and technique through structured exercises, performance tracking, and intelligent recommendations. The application combines modern web technologies with a sophisticated backend architecture to deliver a seamless typing learning experience.
+
+The platform caters to users of varying skill levels by offering both system-provided typing exercises and personalized custom exercises. Users can track their progress through detailed performance metrics, receive AI-driven feedback based on their keystroke patterns, and compare their achievements on an interactive leaderboard. The administrative interface provides comprehensive tools for managing users, overseeing system exercises, and reviewing user feedback.
+
 
 ---
 
@@ -29,7 +32,7 @@ A consolidated reference describing the application's key features, their implem
 LexiType is a Laravel + Inertia typing-practice application that supports:
 
 - System-provided typing texts grouped by category & difficulty.
-- User-created custom exercises.
+- Admin-created custom exercises.
 - Typing sessions with detailed keystroke mistake tracking.
 - Per-user statistics and profiles.
 - AI-generated recommendations (stored for users).
@@ -76,7 +79,7 @@ php artisan serve
 ```
 php artisan test
 ```
-
+```
 ---
 
 ## Features

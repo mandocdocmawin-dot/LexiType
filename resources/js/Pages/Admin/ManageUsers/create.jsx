@@ -14,7 +14,7 @@ const inputCls = "w-full rounded-xl px-4 py-3 text-sm border-none outline-none t
 const inputStyle = { background: '#131b2e', color: '#dae2fd', border: '1px solid rgba(68,70,86,0.3)' };
 
 export default function CreateUser() {
-    const [form, setForm] = useState({ name: '', email: '', role: 'Member', status: 'Active', password: '', password_confirmation: '' });
+    const [form, setForm] = useState({ name: '', email: '', role: 'User', status: 'Active', password: '', password_confirmation: '' });
     const [errors, setErrors] = useState({});
     const [submitting, setSubmitting] = useState(false);
 
@@ -55,29 +55,21 @@ export default function CreateUser() {
 
                         <form onSubmit={handleSubmit} className="space-y-6">
                             <FIELD label="Full Name">
-                                <input value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. Jane Doe" className={inputCls} style={inputStyle} maxLength={25}/>
+                                <input value={form.name} onChange={e => set('name', e.target.value)} placeholder="e.g. Jane Doe" className={inputCls} style={inputStyle} />
                                 {errors.name && <p className="text-xs mt-1" style={{ color: '#ffb2b7' }}>{errors.name}</p>}
                             </FIELD>
 
                             <FIELD label="Email Address">
-                                <input type="email" value={form.email} onChange={e => set('email', e.target.value)} placeholder="jane@example.com" className={inputCls} style={inputStyle} maxLength={50} />
+                                <input type="email" value={form.email} onChange={e => set('email', e.target.value)} placeholder="jane@example.com" className={inputCls} style={inputStyle} />
                                 {errors.email && <p className="text-xs mt-1" style={{ color: '#ffb2b7' }}>{errors.email}</p>}
                             </FIELD>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <FIELD label="Role">
-                                    <select value={form.role} onChange={e => set('role', e.target.value)} className={inputCls} style={inputStyle}>
-                                        {['user', 'admin'].map(r => <option key={r} value={r} style={{ background: '#171f33' }}>{r}</option>)}
-                                    </select>
-                                    {errors.role && <p className="text-xs mt-1" style={{ color: '#ffb2b7' }}>{errors.role}</p>}
-                                </FIELD>
-                                <FIELD label="Status">
-                                    <select value={form.status} onChange={e => set('status', e.target.value)} className={inputCls} style={inputStyle}>
-                                        {['Active', 'Suspended', 'Pending'].map(s => <option key={s} value={s} style={{ background: '#171f33' }}>{s}</option>)}
-                                    </select>
-                                    {errors.status && <p className="text-xs mt-1" style={{ color: '#ffb2b7' }}>{errors.status}</p>}
-                                </FIELD>
-                            </div>
+                            <FIELD label="Role">
+                                <select value={form.role} onChange={e => set('role', e.target.value)} className={inputCls} style={inputStyle}>
+                                    {['User', 'Administrator'].map(r => <option key={r} value={r} style={{ background: '#171f33' }}>{r}</option>)}
+                                </select>
+                                {errors.role && <p className="text-xs mt-1" style={{ color: '#ffb2b7' }}>{errors.role}</p>}
+                            </FIELD>
 
                             <FIELD label="Password">
                                 <input type="password" value={form.password} onChange={e => set('password', e.target.value)} placeholder="Min. 8 characters" className={inputCls} style={inputStyle} />
