@@ -28,5 +28,6 @@ class AppServiceProvider extends ServiceProvider
         // I-link ang Model sa Policy
         Gate::policy(UserFeedback::class, UserFeedbackPolicy::class);
         Gate::policy(User::class, UserPolicy::class);
+        Gate::policy(SystemTypingText::class, SystemTypingTextPolicy::class);
     }
 }
