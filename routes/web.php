@@ -7,6 +7,7 @@ use App\Http\Controllers\UserFeedbackController;
 use App\Http\Controllers\AIAnalysisController;
 use App\Http\Controllers\LeaderboardController;
 use App\Http\Controllers\DashboardController; 
+use App\Http\Controllers\ManageUsersController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -51,6 +52,9 @@ Route::get('/api/leaderboard', [LeaderboardController::class, 'index'])->name('l
 // --- ADMIN ROUTES ---
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::resource('feedback', UserFeedbackController::class)->only(['index', 'show', 'destroy']);
+    Route::resource('users', ManageUsersController::class);
+    Route::patch('users/{user}/suspend', [ManageUsersController::class, 'suspend'])->name('users.suspend');
+    Route::post('users/{user}/reset-password', [ManageUsersController::class, 'resetPassword'])->name('users.reset-password');
 });
 
 require __DIR__.'/auth.php';

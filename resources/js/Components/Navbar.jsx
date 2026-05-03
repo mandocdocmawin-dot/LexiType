@@ -72,17 +72,37 @@ export default function Navbar({ auth }) {
                             </span>
                         </button>
 
+                        {/* Admin Tools */}
                         {auth?.user?.role === 'admin' && (
-                            <Link 
-                                href={route('admin.feedback.index')}
-                                className="group relative p-2 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-[#222a3d]/30 transition-all focus:outline-none"
-                                aria-label="View Feedback"
-                            >
-                                <span className="material-symbols-outlined">rate_review</span>
-                                <span className="absolute top-full left-1/2 -translate-x-1/2 mt-1 px-2 py-1 bg-[#222a3d] text-xs text-slate-200 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
-                                    Feedback
-                                </span>
-                            </Link>
+                            <>
+                                {/* Manage Users Button */}
+                                <Link 
+                                    href={route('admin.users.index')}
+                                    className={`group relative p-2 rounded-lg flex items-center justify-center transition-all ${
+                                        url?.startsWith('/admin/users') 
+                                            ? 'text-[#bbc3ff] bg-[#222a3d]/50' 
+                                            : 'text-slate-400 hover:text-white hover:bg-[#222a3d]/30'
+                                    }`}
+                                    aria-label="Manage Users"
+                                >
+                                    <span className="material-symbols-outlined">manage_accounts</span>
+                                    <span className="absolute top-full left-1/2 -translate-x-1/2 mt-1 px-2 py-1 bg-[#222a3d] text-xs text-slate-200 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                        Manage Users
+                                    </span>
+                                </Link>
+
+                                {/* Feedback Button */}
+                                <Link 
+                                    href={route('admin.feedback.index')}
+                                    className="group relative p-2 rounded-lg flex items-center justify-center text-slate-400 hover:text-white hover:bg-[#222a3d]/30 transition-all focus:outline-none"
+                                    aria-label="View Feedback"
+                                >
+                                    <span className="material-symbols-outlined">rate_review</span>
+                                    <span className="absolute top-full left-1/2 -translate-x-1/2 mt-1 px-2 py-1 bg-[#222a3d] text-xs text-slate-200 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                        Feedback
+                                    </span>
+                                </Link>
+                            </>
                         )}
                         
                        {auth?.user?.role === 'user' ? (

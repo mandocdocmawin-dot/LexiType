@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { router, usePage, Link } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head } from '@inertiajs/react';
+import Navbar from '@/Components/Navbar';
 
 function timeAgo(dateStr) {
     if (!dateStr) return 'Never';
@@ -76,6 +77,26 @@ function UserPanel({ user, onClose, onSuspend, onResetPassword, onDelete }) {
 
     return (
         <>
+            <Head title="Stats">
+                <link rel="preconnect" href="https://fonts.googleapis.com" />
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+                <link 
+                    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" 
+                    rel="stylesheet" 
+                />
+                <link 
+                    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" 
+                    rel="stylesheet" 
+                />
+            </Head>
+            
+            <style dangerouslySetInnerHTML={{
+                __html: `
+                    .material-symbols-outlined {
+                        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+                    }
+                `
+            }} />
             <div className="fixed inset-0 z-40" style={{ background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(4px)' }} onClick={onClose} />
             <aside
                 className="fixed top-0 right-0 h-full overflow-y-auto z-50 shadow-2xl"
@@ -226,9 +247,12 @@ export default function ManageUsersIndex({ users = [], filters = {} }) {
                 </div>
             )}
 
+            <Navbar auth={auth} />
+
 
             {/* ── Content ── */}
-            <section className="p-8 space-y-8 flex-1">
+            {/* Added mt-20 to push this section down below the Navbar */}
+            <section className="p-8 mt-20 space-y-8 flex-1">
 
                 {/* Filter Bar */}
                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-6 rounded-xl" style={{ background: '#131b2e' }}>
