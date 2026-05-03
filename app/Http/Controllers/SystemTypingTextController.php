@@ -8,59 +8,121 @@ use App\Models\SystemTypingText;
 class SystemTypingTextController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Display a listing of user's system typing texts.
      */
-    public function index()
+    public function index(Request $request)
     {
-        //
+        // Assuming user-scoped records based on the original controller's logic
+        $typingTexts = SystemTypingText::where('user_id', auth()->id())
+            ->orderByDesc('created_at')
+            ->get([
+                'id',
+                'user_id',
+                'category',
+                'content',
+                'difficulty_level',
+                'is_active',
+                'created_at',
+            ]);
+
+        return inertia('Admin/SystemTypingTexts/index', [
+            'texts' => $typingTexts,
+        ]);
     }
 
     /**
-     * Show the form for creating a new resource.
+     * Show the form for creating a new system typing text.
      */
     public function create()
     {
-        //
+        return inertia('Admin/SystemTypingTexts/create');
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Store a newly created system typing text in storage.
      */
     public function store(Request $request)
     {
-        //
+        $validated = $request->validate([
+            'category' => 'required|string|max:255',
+            'content' => 'required|string|max:5000',
+            'difficulty_level' => 'required|in:easy,medium,hard',
+            'is_active' => 'boolean',
+        ]);
+
+        SystemTypingText::create([
+            'user_id' => auth()->id(),
+            'category' => $validated['category'],
+            'content' => $validated['content'],
+            'difficulty_level' => $validated['difficulty_level'],
+            'is_active' => $validated['is_active'] ?? false,
+        ]);
+
+        return redirect()->route('admin.typing-texts.index')
+            ->with('success', 'Typing text created successfully.');
     }
 
     /**
-     * Display the specified resource.
+     * Display the specified system typing text.
      */
-    public function show(string $id)
+    public function show(SystemTypingText $typingText)
     {
-        //
+        $this->authorize('view', $typingText);
+
+        return inertia('Admin/SystemTypingTexts/show', [
+            'text' => $typingText,
+        ]);
     }
 
     /**
-     * Show the form for editing the specified resource.
+     * Show the form for editing the specified system typing text.
      */
-    public function edit(string $id)
+    public function edit(SystemTypingText $typingText)
     {
-        //
+        $this->authorize('update', $typingText);
+
+        return inertia('Admin/SystemTypingTexts/edit', [
+            'text' => $typingText->only([
+                'id',
+                'category',
+                'content',
+                'difficulty_level',
+                'is_active',
+            ]),
+        ]);
     }
 
     /**
-     * Update the specified resource in storage.
+     * Update the specified system typing text in storage.
      */
-    public function update(Request $request, string $id)
+    public function update(Request $request, SystemTypingText $typingText)
     {
-        //
+        $this->authorize('update', $typingText);
+
+        $validated = $request->validate([
+            'category' => 'sometimes|required|string|max:255',
+            'content' => 'sometimes|required|string|max:5000',
+            'difficulty_level' => 'sometimes|required|in:easy,medium,hard',
+            'is_active' => 'sometimes|boolean',
+        ]);
+
+        $typingText->update($validated);
+
+        return redirect()->route('admin.typing-texts.index')
+            ->with('success', 'Typing text updated successfully.');
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified system typing text from storage.
      */
-    public function destroy(string $id)
+    public function destroy(SystemTypingText $typingText)
     {
-        //
+        $this->authorize('delete', $typingText);
+
+        $typingText->delete();
+
+        return redirect()->route('admin.typing-texts.index')
+            ->with('success', 'Typing text deleted successfully.');
     }
 
     /**
