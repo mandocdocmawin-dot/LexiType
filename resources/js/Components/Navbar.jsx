@@ -30,8 +30,14 @@ export default function Navbar({ auth }) {
                     
                     {auth?.user ? (
                         <nav className="hidden md:flex items-center gap-8 text-sm font-semibold tracking-wide">
-                            <Link href="/dashboard" className={navLinkClasses('/dashboard')}>Dashboard</Link>
-                            {/* Updated About to a button triggering the modal */}
+                            {(() => {
+                                const role = (auth?.user?.role ?? '').toLowerCase();
+                                const isAdminOrMod = ['admin', 'administrator', 'moderator'].includes(role);
+                                const dashHref = isAdminOrMod ? '/admin/overview' : '/dashboard';
+                                return (
+                                    <Link href={dashHref} className={navLinkClasses(dashHref)}>Dashboard</Link>
+                                );
+                            })()}
                             <button 
                                 onClick={() => setIsAboutOpen(true)} 
                                 className="text-slate-400 hover:text-white transition-colors"
@@ -42,7 +48,6 @@ export default function Navbar({ auth }) {
                     ) : (
                         <nav className="hidden md:flex items-center gap-8 text-sm font-semibold tracking-wide">
                             <Link href="/" className={navLinkClasses('/')}>Home</Link>
-                            {/* Updated About to a button triggering the modal */}
                             <button 
                                 onClick={() => setIsAboutOpen(true)} 
                                 className="text-slate-400 hover:text-white transition-colors"

@@ -24,7 +24,11 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', function () {
-    return Inertia::render('Dashboard');
+    $role = strtolower(auth()->user()->role ?? '');
+    if (in_array($role, ['admin', 'administrator', 'moderator'])) {
+        return redirect()->route('admin.overview');
+    }
+    return redirect('/');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::get('/about', function () {

@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Admin;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\TypingSession;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class ManageUsersController extends Controller
@@ -16,8 +18,18 @@ class ManageUsersController extends Controller
      */
     public function index(Request $request)
     {
+        // Build leaderboard ranks (rank by highest WPM per user)
+        $rankedIds = DB::table('typing_sessions')
+            ->select('user_id', DB::raw('MAX(wpm_score) as highest_wpm'))
+            ->groupBy('user_id')
+            ->orderByDesc('highest_wpm')
+            ->pluck('user_id')
+            ->values();
+        $rankMap = $rankedIds->flip()->map(fn($i) => $i + 1)->toArray();
+
         $users = User::query()
             ->with(['profile', 'stats'])
+            ->withMax('typingSessions as last_practice_at', 'created_at')
             ->when($request->search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('name', 'like', "%{$search}%")
@@ -25,34 +37,29 @@ class ManageUsersController extends Controller
                       ->orWhere('id', 'like', "%{$search}%");
                 });
             })
-            ->when($request->role && $request->role !== 'All Roles', function ($query) use ($request) {
-                $query->where('role', $request->role);
-            })
-            ->when($request->status && $request->status !== 'All Status', function ($query) use ($request) {
-                $query->where('status', $request->status);
-            })
             ->orderBy('created_at', 'desc')
             ->get()
-            ->map(function ($user) {
+            ->map(function ($user) use ($rankMap) {
                 return [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'role' => $user->role,
-                    'status' => $user->status,
-                    'bio' => $user->profile?->bio,
-                    'avg_wpm' => $user->stats?->average_wpm ?? 0,
-                    'accuracy' => $user->accuracy,
-                    'account_type' => $user->account_type,
-                    'mfa_enabled' => $user->mfa_enabled,
-                    'last_login_at' => $user->last_login_at,
-                    'created_at' => $user->created_at,
+                    'id'                  => $user->id,
+                    'name'                => $user->name,
+                    'email'               => $user->email,
+                    'role'                => $user->role,
+                    'bio'                 => $user->profile?->bio,
+                    'avg_wpm'             => $user->stats?->average_wpm ?? 0,
+                    'accuracy'            => $user->accuracy,
+                    'account_type'        => $user->account_type,
+                    'mfa_enabled'         => $user->mfa_enabled,
+                    'last_practice_at'    => $user->last_practice_at,
+                    'completed_exercises' => $user->stats?->total_tests_taken ?? 0,
+                    'typing_rank'         => $rankMap[$user->id] ?? null,
+                    'created_at'          => $user->created_at,
                 ];
             });
 
         return Inertia::render('Admin/ManagerUsers/index', [
-            'users' => $users,
-            'filters' => $request->only(['search', 'role', 'status']),
+            'users'   => $users,
+            'filters' => $request->only(['search']),
         ]);
     }
 
@@ -63,21 +70,36 @@ class ManageUsersController extends Controller
     public function show(User $user)
     {
         $user->load(['profile', 'stats']);
-        
+
+        // Compute leaderboard rank
+        $rankedIds = DB::table('typing_sessions')
+            ->select('user_id', DB::raw('MAX(wpm_score) as highest_wpm'))
+            ->groupBy('user_id')
+            ->orderByDesc('highest_wpm')
+            ->pluck('user_id')
+            ->values();
+        $rankIndex = $rankedIds->search($user->id);
+        $typingRank = $rankIndex !== false ? $rankIndex + 1 : null;
+
+        // Last practice date
+        $lastPractice = TypingSession::where('user_id', $user->id)->max('created_at');
+
         return Inertia::render('Admin/ManagerUsers/show', [
             'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $user->role,
-                'status' => $user->status,
-                'bio' => $user->profile?->bio,
-                'avg_wpm' => $user->stats?->average_wpm ?? 0,
-                'accuracy' => $user->accuracy,
-                'account_type' => $user->account_type,
-                'mfa_enabled' => $user->mfa_enabled,
-                'last_login_at' => $user->last_login_at,
-                'created_at' => $user->created_at,
+                'id'                  => $user->id,
+                'name'                => $user->name,
+                'email'               => $user->email,
+                'role'                => $user->role,
+                'status'              => $user->status,
+                'bio'                 => $user->profile?->bio,
+                'avg_wpm'             => $user->stats?->average_wpm ?? 0,
+                'accuracy'            => $user->accuracy,
+                'account_type'        => $user->account_type,
+                'mfa_enabled'         => $user->mfa_enabled,
+                'last_practice_at'    => $lastPractice,
+                'completed_exercises' => $user->stats?->total_tests_taken ?? 0,
+                'typing_rank'         => $typingRank,
+                'created_at'          => $user->created_at,
             ],
         ]);
     }
@@ -99,7 +121,7 @@ class ManageUsersController extends Controller
         $validated = $request->validate([
             'name'     => 'required|string|max:255',
             'email'    => 'required|email|unique:users,email',
-            'role'     => 'required|in:Administrator,Moderator,Member',
+            'role'     => 'required|in:admin,Administrator,Moderator,Member',
             'status'   => 'required|in:Active,Suspended,Pending',
             'password' => 'required|string|min:8|confirmed',
             'accuracy' => 'nullable|numeric|min:0|max:100',
@@ -143,7 +165,7 @@ class ManageUsersController extends Controller
         $validated = $request->validate([
             'name'   => 'required|string|max:255',
             'email'  => 'required|email|unique:users,email,' . $user->id,
-            'role'   => 'required|in:Administrator,Moderator,Member',
+            'role'   => 'required|in:admin,Administrator,Moderator,Member',
             'status' => 'required|in:Active,Suspended,Pending',
         ]);
 

@@ -18,15 +18,15 @@ class IsAdmin
         $user = Auth::user();
         $role = strtolower($user->role ?? '');
 
-        if (in_array($role, ['admin', 'administrator'])) {
+        if (in_array($role, ['admin', 'administrator', 'moderator'])) {
             return $next($request);
         }
 
         // Return different response based on request type
         if ($request->expectsJson()) {
-            return response()->json(['message' => 'Unauthorized. Admin access only.'], 403);
+            return response()->json(['message' => 'Unauthorized. Admin or Moderator access only.'], 403);
         }
 
-        return redirect('/')->with('error', 'Unauthorized. Admin access only.');
+        return redirect('/')->with('error', 'Unauthorized. Admin or Moderator access only.');
     }
 }

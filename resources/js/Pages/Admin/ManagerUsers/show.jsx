@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { router, Link, usePage } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head } from '@inertiajs/react';
@@ -72,21 +72,32 @@ export default function ShowUser({ user }) {
     const { flash } = usePage().props;
     const [flashMsg, setFlashMsg] = useState(flash?.success ?? null);
     const [confirmAction, setConfirmAction] = useState(null);
+    const [refreshing, setRefreshing] = useState(false);
 
-    const doSuspend = () => router.patch(route('admin.users.suspend', user.id));
-    const doResetPassword = () => router.post(route('admin.users.reset-password', user.id));
+    // Manual refresh handler
+    const refreshStats = useCallback(() => {
+        setRefreshing(true);
+        router.reload({ only: ['user'], onFinish: () => setRefreshing(false) });
+    }, []);
+
+    // Auto-poll every 15 seconds for live stat updates
+    useEffect(() => {
+        const interval = setInterval(() => {
+            router.reload({ only: ['user'] });
+        }, 15000);
+        return () => clearInterval(interval);
+    }, []);
+
     const doDelete = () => router.delete(route('admin.users.destroy', user.id));
 
     const actions = {
-        suspend: { title: `Suspend ${user.name}?`, msg: 'This will lock the user out immediately.', label: 'Suspend', danger: true, fn: doSuspend },
-        reset: { title: `Reset password for ${user.name}?`, msg: 'A new random password will be generated.', label: 'Reset Password', danger: false, fn: doResetPassword },
-        delete: { title: `Delete ${user.name}?`, msg: 'All data will be permanently erased.', label: 'Delete', danger: true, fn: doDelete },
+        delete: { title: `Delete ${user.name}?`, msg: 'All data will be permanently erased. This cannot be undone.', label: 'Delete', danger: true, fn: doDelete },
     };
 
     return (
         <AdminLayout>
             <Head title={`${user.name} — Profile`} />
-            <style>{`::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:#0b1326}::-webkit-scrollbar-thumb{background:#2d3449;border-radius:10px}`}</style>
+            <style>{`::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:#0b1326}::-webkit-scrollbar-thumb{background:#2d3449;border-radius:10px} @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }`}</style>
 
             {flashMsg && (
                 <div className="fixed top-5 right-5 z-[200] flex items-center gap-3 px-5 py-3 rounded-xl shadow-xl text-sm font-medium"
@@ -118,15 +129,30 @@ export default function ShowUser({ user }) {
             <div className="min-h-screen p-8" style={{ background: '#0b1326' }}>
                 <div className="max-w-3xl mx-auto space-y-8">
 
-                    {/* Back + Edit links */}
+                    {/* Back + Edit + Refresh links */}
                     <div className="flex items-center justify-between">
                         <Link href={route('admin.users.index')} className="inline-flex items-center gap-2 text-sm transition-colors" style={{ color: '#64748b' }}>
                             <span className="material-symbols-outlined text-base">arrow_back</span>Back to Users
                         </Link>
-                        <Link href={route('admin.users.edit', user.id)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all"
-                            style={{ background: '#222a3d', color: '#bbc3ff', border: '1px solid rgba(68,70,86,0.3)' }}>
-                            <span className="material-symbols-outlined text-base">edit</span>Edit User
-                        </Link>
+                        <div className="flex items-center gap-3">
+                            <button
+                                onClick={refreshStats}
+                                disabled={refreshing}
+                                title="Refresh Stats"
+                                className="inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition-all"
+                                style={{ background: refreshing ? '#1a2540' : '#222a3d', color: refreshing ? '#4edea3' : '#8e8fa2', border: '1px solid rgba(68,70,86,0.3)' }}
+                            >
+                                <span
+                                    className="material-symbols-outlined text-base"
+                                    style={{ animation: refreshing ? 'spin 1s linear infinite' : 'none' }}
+                                >refresh</span>
+                                {refreshing ? 'Refreshing…' : 'Refresh Stats'}
+                            </button>
+                            <Link href={route('admin.users.edit', user.id)} className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all"
+                                style={{ background: '#222a3d', color: '#bbc3ff', border: '1px solid rgba(68,70,86,0.3)' }}>
+                                <span className="material-symbols-outlined text-base">edit</span>Edit User
+                            </Link>
+                        </div>
                     </div>
 
                     {/* Profile card */}
@@ -163,28 +189,30 @@ export default function ShowUser({ user }) {
                             <StatCard label="Accuracy" value={user.accuracy != null ? Number(user.accuracy).toFixed(1) : null} unit="%" color="#bbc3ff" />
                         </div>
 
-                        {/* System info */}
+                        {/* Activity Info */}
                         <div className="space-y-1">
-                            <h5 className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color: '#bbc3ff' }}>System Info</h5>
-                            <InfoRow label="Last Login" value={timeAgo(user.last_login_at)} />
-                            <InfoRow label="Account Type" value={user.account_type ?? 'Standard'} />
-                            <InfoRow label="MFA Status" value={user.mfa_enabled ? 'Enabled' : 'Disabled'} color={user.mfa_enabled ? '#4edea3' : '#8e8fa2'} />
+                            <h5 className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color: '#bbc3ff' }}>Activity Info</h5>
+                            <InfoRow label="Typing Rank"
+                                value={user.typing_rank ? `#${user.typing_rank}` : 'Unranked'}
+                                color={user.typing_rank ? '#4edea3' : '#8e8fa2'} />
+                            <InfoRow label="Last Practice" value={timeAgo(user.last_practice_at)} />
+                            <InfoRow label="Completed Exercises" value={user.completed_exercises ?? 0} />
                             <InfoRow label="Joined" value={formatDate(user.created_at)} />
                         </div>
                     </div>
 
                     {/* Danger zone */}
                     <div className="rounded-2xl p-8" style={{ background: '#131b2e', border: '1px solid rgba(68,70,86,0.2)' }}>
-                        <h5 className="text-[10px] font-bold uppercase tracking-widest mb-4" style={{ color: '#ffb2b7' }}>Account Actions</h5>
+                        <h5 className="text-[10px] font-bold uppercase tracking-widest mb-4" style={{ color: '#ffb2b7' }}>Danger Zone</h5>
                         <div className="space-y-3">
-                            <button onClick={() => setConfirmAction('reset')} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all" style={{ background: '#2d3449', color: '#dae2fd' }}>
-                                <span className="material-symbols-outlined text-lg">lock_reset</span>Reset Password
-                            </button>
-                            <button onClick={() => setConfirmAction('suspend')} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all"
-                                style={{ border: '1px solid rgba(255,178,183,0.3)', color: '#ffb2b7' }}>
-                                <span className="material-symbols-outlined text-lg">block</span>Suspend Account
-                            </button>
-                            <button onClick={() => setConfirmAction('delete')} className="w-full text-[10px] uppercase tracking-widest font-bold py-2 transition-colors" style={{ color: '#8e8fa2' }}>
+                            <button
+                                onClick={() => setConfirmAction('delete')}
+                                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all"
+                                style={{ border: '1px solid rgba(255,178,183,0.3)', color: '#ffb2b7', background: 'transparent' }}
+                                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,178,183,0.1)'}
+                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                            >
+                                <span className="material-symbols-outlined text-lg">delete_forever</span>
                                 Delete User Data
                             </button>
                         </div>

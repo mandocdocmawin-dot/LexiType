@@ -5,7 +5,7 @@ import { Head } from '@inertiajs/react';
 
 const MAX_CHARS = 5000;
 
-export default function CreateExercise() {
+export default function CreateExercise({ categories = [] }) {
     const [form, setForm] = useState({ category: '', content: '', difficulty_level: 'medium', is_active: false });
     const [errors, setErrors] = useState({});
     const [submitting, setSubmitting] = useState(false);
@@ -32,11 +32,19 @@ export default function CreateExercise() {
                         <span className="material-symbols-outlined text-sm">chevron_right</span>
                         <span style={{ color: '#bbc3ff' }}>New Exercise</span>
                     </div>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                         <label className="text-[10px] uppercase tracking-widest font-bold ml-1" style={{ color: 'rgba(99,102,241,0.8)' }}>Exercise Title</label>
-                        <input value={form.category} onChange={e => set('category', e.target.value)} placeholder="Enter exercise title..."
-                            className="w-full bg-transparent border-none p-0 text-5xl font-bold focus:ring-0 focus:outline-none tracking-tight"
-                            style={{ fontFamily: 'Space Grotesk', color: '#dae2fd', caretColor: '#bbc3ff' }} />
+                        <select
+                            value={form.category}
+                            onChange={e => set('category', e.target.value)}
+                            className="w-full bg-transparent border-none p-0 text-5xl font-bold focus:ring-0 focus:outline-none tracking-tight appearance-none cursor-pointer"
+                            style={{ fontFamily: 'Space Grotesk', color: '#dae2fd', background: 'transparent' }}
+                        >
+                            <option value="" disabled style={{ background: '#171f33', color: '#64748b' }}>Select a category...</option>
+                            {categories.map(cat => (
+                                <option key={cat} value={cat} style={{ background: '#171f33', color: '#dae2fd', fontSize: '16px' }}>{cat}</option>
+                            ))}
+                        </select>
                         {errors.category && <p className="text-xs mt-1" style={{ color: '#ffb2b7' }}>{errors.category}</p>}
                     </div>
                     <div className="space-y-4">

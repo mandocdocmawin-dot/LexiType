@@ -34,13 +34,16 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        $role = $request->user()->role ?? '';
+        $user = $request->user();
+        $user->update(['last_login_at' => now()]);
 
-        if (in_array(strtolower($role), ['admin', 'administrator'])) {
+        $role = $user->role ?? '';
+
+        if (in_array(strtolower($role), ['admin', 'administrator', 'moderator'])) {
             return redirect()->intended(route('admin.overview', absolute: false));
         }
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        return redirect()->intended('/');
     }
 
     /**

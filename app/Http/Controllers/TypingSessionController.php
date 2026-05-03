@@ -52,8 +52,31 @@ class TypingSessionController extends Controller
             }
         }
 
+        // Calculate and update user statistics
+        $allSessions = TypingSession::where('user_id', $user->id)->get();
+        
+        $totalTests = $allSessions->count();
+        $averageWpm = $allSessions->avg('wpm_score') ?: 0;
+        $highestWpm = $allSessions->max('wpm_score') ?: 0;
+        $averageAccuracy = $allSessions->avg('accuracy_percentage') ?: 0;
+
+        // Update UserStat
+        \App\Models\UserStat::updateOrCreate(
+            ['user_id' => $user->id],
+            [
+                'average_wpm' => round($averageWpm),
+                'highest_wpm' => $highestWpm,
+                'total_tests_taken' => $totalTests,
+            ]
+        );
+
+        // Update User Accuracy
+        $user->update([
+            'accuracy' => round($averageAccuracy, 2)
+        ]);
+
         return response()->json([
-            'message' => 'Session saved',
+            'message' => 'Session saved and stats updated',
             'data' => $typingSession->load('keystrokeMistakes'),
         ], 201);
     }

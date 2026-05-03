@@ -22,7 +22,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'isAdmin' => \App\Http\Middleware\IsAdmin::class,
         ]);
 
-        //
+        $middleware->redirectUsersTo(fn () => match(strtolower(auth()->user()->role ?? '')) {
+            'admin', 'administrator', 'moderator' => route('admin.overview', absolute: false),
+            default => '/',
+        });
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

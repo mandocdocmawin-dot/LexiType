@@ -37,6 +37,16 @@ class User extends Authenticatable
     {
         $role = strtolower($this->role ?? '');
         return in_array($role, ['admin', 'administrator']);
+    }
+
+    public function isModerator(): bool
+    {
+        return strtolower($this->role ?? '') === 'moderator';
+    }
+
+    public function isAdminOrModerator(): bool
+    {
+        return $this->isAdmin() || $this->isModerator();
     }   
 
     public function profile(): HasOne

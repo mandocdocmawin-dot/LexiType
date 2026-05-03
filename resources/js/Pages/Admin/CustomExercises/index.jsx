@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { router, usePage, Link } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head } from '@inertiajs/react';
+
+const SIDEBAR_PAGE_SIZE = 4;
 
 function charCount(str) {
     if (!str) return '0';
@@ -30,13 +32,20 @@ function ConfirmModal({ open, title, message, confirmLabel, danger, onConfirm, o
     );
 }
 
-export default function CustomExercisesIndex({ exercises = [] }) {
+export default function CustomExercisesIndex({ exercises = [], categories = [] }) {
     const { flash, auth } = usePage().props;
     const [selected, setSelected] = useState(exercises[0] ?? null);
     const [creating, setCreating] = useState(false);
     const [activeTab, setActiveTab] = useState('Dashboard');
     const [flashMsg, setFlashMsg] = useState(flash?.success ?? null);
     const [deleteModal, setDeleteModal] = useState(false);
+    const [sidebarPage, setSidebarPage] = useState(1);
+
+    const totalSidebarPages = Math.max(1, Math.ceil(exercises.length / SIDEBAR_PAGE_SIZE));
+    const paginatedExercises = useMemo(() => {
+        const start = (sidebarPage - 1) * SIDEBAR_PAGE_SIZE;
+        return exercises.slice(start, start + SIDEBAR_PAGE_SIZE);
+    }, [exercises, sidebarPage]);
 
     // Editable fields
     const [title, setTitle] = useState('');
@@ -128,7 +137,7 @@ export default function CustomExercisesIndex({ exercises = [] }) {
 
 
             {/* ── Master-Detail Content ── */}
-            <div className="flex flex-1 overflow-hidden">
+            <div className="flex overflow-hidden" style={{ height: '100vh' }}>
 
                 {/* ── Master List Panel ── */}
                 <section className="w-96 flex flex-col z-10 shadow-2xl"
@@ -141,9 +150,12 @@ export default function CustomExercisesIndex({ exercises = [] }) {
                             Create New Exercise
                         </button>
                     </div>
-                    <div className="flex-1 overflow-y-auto px-4 pb-6 space-y-2">
-                        <div className="px-2 py-2">
+                    <div className="flex-1 flex flex-col px-4 pb-4 overflow-hidden">
+                        <div className="px-2 py-2 flex items-center justify-between">
                             <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#64748b' }}>Recent Exercises</span>
+                            {exercises.length > 0 && (
+                                <span className="text-[10px] font-mono" style={{ color: '#64748b' }}>{exercises.length} total</span>
+                            )}
                         </div>
 
                         {exercises.length === 0 && (
@@ -153,61 +165,94 @@ export default function CustomExercisesIndex({ exercises = [] }) {
                             </div>
                         )}
 
-                        {exercises.map(ex => {
-                            const isSelected = !creating && selected?.id === ex.id;
-                            return (
-                                <div key={ex.id} onClick={() => selectExercise(ex)}
-                                    className="group p-4 cursor-pointer transition-colors"
-                                    style={isSelected
-                                        ? { background: 'rgba(45,52,73,0.6)', borderLeft: '4px solid #bbc3ff', borderRadius: '0 12px 12px 0' }
-                                        : { borderLeft: '4px solid transparent', borderRadius: '12px' }}
-                                    onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = '#222a3d'; }}
-                                    onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}>
-                                    <div className="flex justify-between items-start mb-1">
-                                        <h4 style={{ fontFamily: 'Space Grotesk', fontWeight: isSelected ? 700 : 600, color: isSelected ? '#dae2fd' : '#cbd5e1' }}>
-                                            {ex.category || 'Untitled'}
-                                        </h4>
-                                        <span className="material-symbols-outlined text-lg"
-                                            style={ex.is_active
-                                                ? { color: '#4edea3', fontVariationSettings: "'FILL' 1" }
-                                                : { color: '#475569' }}>
-                                            {ex.is_active ? 'check_circle' : 'radio_button_unchecked'}
-                                        </span>
-                                    </div>
-                                    <p className="text-xs line-clamp-1" style={{ color: isSelected ? '#c5c5d9' : '#64748b' }}>
-                                        {ex.content?.substring(0, 60) || 'No content...'}
-                                    </p>
-                                     <div className="mt-3 flex items-center gap-3">
-                                        <span className="text-[10px] px-2 py-1 rounded font-mono" style={{ background: '#020617', color: '#94a3b8' }}>
-                                            {charCount(ex.content)} chars
-                                        </span>
-                                        {ex.is_active ? (
-                                            <span className="text-[10px] px-2 py-1 rounded font-bold" style={{ background: 'rgba(78,222,163,0.1)', color: '#4edea3' }}>PUBLISHED</span>
-                                        ) : (
-                                            <span className="text-[10px] px-2 py-1 rounded font-bold" style={{ background: 'rgba(68,70,86,0.3)', color: '#94a3b8' }}>DRAFT</span>
-                                        )}
-                                        {/* Action buttons — visible on hover */}
-                                        <div className="ml-auto flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Link href={route('admin.exercises.show', ex.id)} onClick={e => e.stopPropagation()} title="View"
-                                                className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-indigo-500/10"
-                                                style={{ color: '#818cf8' }}>
-                                                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>visibility</span>
-                                            </Link>
-                                            <Link href={route('admin.exercises.edit', ex.id)} onClick={e => e.stopPropagation()} title="Edit"
-                                                className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-amber-500/10"
-                                                style={{ color: '#f59e0b' }}>
-                                                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>edit</span>
-                                            </Link>
-                                            <button onClick={e => { e.stopPropagation(); setDeleteModal(true); setSelected(ex); }} title="Delete"
-                                                className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-red-500/10"
-                                                style={{ color: '#ffb2b7' }}>
-                                                <span className="material-symbols-outlined" style={{ fontSize: 16 }}>delete</span>
-                                            </button>
+                        <div className="flex-1 space-y-2 overflow-hidden">
+                            {paginatedExercises.map(ex => {
+                                const isSelected = !creating && selected?.id === ex.id;
+                                return (
+                                    <div key={ex.id} onClick={() => selectExercise(ex)}
+                                        className="group p-4 cursor-pointer transition-colors"
+                                        style={isSelected
+                                            ? { background: 'rgba(45,52,73,0.6)', borderLeft: '4px solid #bbc3ff', borderRadius: '0 12px 12px 0' }
+                                            : { borderLeft: '4px solid transparent', borderRadius: '12px' }}
+                                        onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = '#222a3d'; }}
+                                        onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}>
+                                        <div className="flex justify-between items-start mb-1">
+                                            <h4 style={{ fontFamily: 'Space Grotesk', fontWeight: isSelected ? 700 : 600, color: isSelected ? '#dae2fd' : '#cbd5e1' }}>
+                                                {ex.category || 'Untitled'}
+                                            </h4>
+                                            <span className="material-symbols-outlined text-lg"
+                                                style={ex.is_active
+                                                    ? { color: '#4edea3', fontVariationSettings: "'FILL' 1" }
+                                                    : { color: '#475569' }}>
+                                                {ex.is_active ? 'check_circle' : 'radio_button_unchecked'}
+                                            </span>
+                                        </div>
+                                        <p className="text-xs line-clamp-1" style={{ color: isSelected ? '#c5c5d9' : '#64748b' }}>
+                                            {ex.content?.substring(0, 60) || 'No content...'}
+                                        </p>
+                                         <div className="mt-3 flex items-center gap-3">
+                                            <span className="text-[10px] px-2 py-1 rounded font-mono" style={{ background: '#020617', color: '#94a3b8' }}>
+                                                {charCount(ex.content)} chars
+                                            </span>
+                                            {ex.is_active ? (
+                                                <span className="text-[10px] px-2 py-1 rounded font-bold" style={{ background: 'rgba(78,222,163,0.1)', color: '#4edea3' }}>PUBLISHED</span>
+                                            ) : (
+                                                <span className="text-[10px] px-2 py-1 rounded font-bold" style={{ background: 'rgba(68,70,86,0.3)', color: '#94a3b8' }}>DRAFT</span>
+                                            )}
+                                            {/* Action buttons — visible on hover */}
+                                            <div className="ml-auto flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <Link href={route('admin.exercises.show', ex.id)} onClick={e => e.stopPropagation()} title="View"
+                                                    className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-indigo-500/10"
+                                                    style={{ color: '#818cf8' }}>
+                                                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>visibility</span>
+                                                </Link>
+                                                <Link href={route('admin.exercises.edit', ex.id)} onClick={e => e.stopPropagation()} title="Edit"
+                                                    className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-amber-500/10"
+                                                    style={{ color: '#f59e0b' }}>
+                                                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>edit</span>
+                                                </Link>
+                                                <button onClick={e => { e.stopPropagation(); setDeleteModal(true); setSelected(ex); }} title="Delete"
+                                                    className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-red-500/10"
+                                                    style={{ color: '#ffb2b7' }}>
+                                                    <span className="material-symbols-outlined" style={{ fontSize: 16 }}>delete</span>
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            );
-                        })}
+                                );
+                            })}
+                        </div>
+
+                        {/* Sidebar Pagination */}
+                        {totalSidebarPages > 1 && (
+                            <div className="pt-3 mt-auto flex items-center justify-between" style={{ borderTop: '1px solid rgba(68,70,86,0.15)' }}>
+                                <button
+                                    onClick={() => setSidebarPage(p => Math.max(1, p - 1))}
+                                    disabled={sidebarPage === 1}
+                                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all"
+                                    style={sidebarPage === 1
+                                        ? { color: '#475569', cursor: 'not-allowed' }
+                                        : { color: '#bbc3ff', background: 'rgba(45,52,73,0.4)' }}
+                                >
+                                    <span className="material-symbols-outlined" style={{ fontSize: 14 }}>chevron_left</span>
+                                    Prev
+                                </button>
+                                <span className="text-[11px] font-mono" style={{ color: '#8e8fa2' }}>
+                                    {sidebarPage} / {totalSidebarPages}
+                                </span>
+                                <button
+                                    onClick={() => setSidebarPage(p => Math.min(totalSidebarPages, p + 1))}
+                                    disabled={sidebarPage === totalSidebarPages}
+                                    className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all"
+                                    style={sidebarPage === totalSidebarPages
+                                        ? { color: '#475569', cursor: 'not-allowed' }
+                                        : { color: '#bbc3ff', background: 'rgba(45,52,73,0.4)' }}
+                                >
+                                    Next
+                                    <span className="material-symbols-outlined" style={{ fontSize: 14 }}>chevron_right</span>
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </section>
 
@@ -231,14 +276,20 @@ export default function CustomExercisesIndex({ exercises = [] }) {
 
                                 {/* Editor */}
                                 <div className="space-y-8">
-                                    {/* Title */}
-                                    <div className="space-y-2">
+                                    {/* Title — dropdown based on category */}
+                                    <div className="space-y-3">
                                         <label className="text-[10px] uppercase tracking-widest font-bold ml-1" style={{ color: 'rgba(99,102,241,0.8)' }}>Exercise Title</label>
-                                        <input type="text" value={title} onChange={e => setTitle(e.target.value)}
-                                            placeholder="Enter exercise title..."
-                                            className="w-full bg-transparent border-none p-0 text-5xl font-bold focus:ring-0 focus:outline-none tracking-tight"
-                                            style={{ fontFamily: 'Space Grotesk', color: '#dae2fd', caretColor: '#bbc3ff' }}
-                                        />
+                                        <select
+                                            value={title}
+                                            onChange={e => setTitle(e.target.value)}
+                                            className="w-full bg-transparent border-none p-0 text-5xl font-bold focus:ring-0 focus:outline-none tracking-tight appearance-none cursor-pointer"
+                                            style={{ fontFamily: 'Space Grotesk', color: '#dae2fd', background: 'transparent' }}
+                                        >
+                                            <option value="" disabled style={{ background: '#171f33', color: '#64748b' }}>Select a category...</option>
+                                            {categories.map(cat => (
+                                                <option key={cat} value={cat} style={{ background: '#171f33', color: '#dae2fd', fontSize: '16px' }}>{cat}</option>
+                                            ))}
+                                        </select>
                                     </div>
 
                                     {/* Content */}
@@ -262,27 +313,6 @@ export default function CustomExercisesIndex({ exercises = [] }) {
                                                     boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2)',
                                                 }}
                                             />
-                                            {/* AI Content Analyzer Widget */}
-                                            {content.length > 50 && (
-                                                <div className="absolute -right-6 top-1/2 -translate-y-1/2 w-72 glass-panel p-6 rounded-xl shadow-2xl hidden lg:block"
-                                                    style={{ border: '1px solid rgba(187,195,255,0.2)' }}>
-                                                    <div className="flex items-center gap-3 mb-4">
-                                                        <div className="w-8 h-8 rounded-full flex items-center justify-center animate-pulse" style={{ background: '#bbc3ff' }}>
-                                                            <span className="material-symbols-outlined text-sm" style={{ color: '#001d93', fontVariationSettings: "'FILL' 1" }}>psychology</span>
-                                                        </div>
-                                                        <h5 className="text-xs font-bold tracking-tight" style={{ fontFamily: 'Space Grotesk', color: '#dae2fd' }}>AI CONTENT ANALYZER</h5>
-                                                    </div>
-                                                    <p className="text-xs leading-relaxed" style={{ color: '#c5c5d9' }}>
-                                                        This content has a <span className="font-bold" style={{ color: '#4edea3' }}>
-                                                            {difficulty === 'hard' ? 'High' : difficulty === 'medium' ? 'Medium' : 'Low'}
-                                                        </span> difficulty rating. {content.length > 500 ? 'Good distribution of character variety.' : 'Add more content for better analysis.'}
-                                                    </p>
-                                                    <div className="mt-4 pt-4 flex justify-between text-[10px] font-bold" style={{ borderTop: '1px solid rgba(68,70,86,0.3)', color: '#64748b' }}>
-                                                        <span>DIFFICULTY: {difficulty === 'hard' ? '8.4' : difficulty === 'medium' ? '5.2' : '2.8'}</span>
-                                                        <span>CHARS: {content.length}</span>
-                                                    </div>
-                                                </div>
-                                            )}
                                         </div>
                                     </div>
 
