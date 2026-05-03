@@ -50,7 +50,7 @@ function InfoRow({ label, value, color }) {
 }
 
 function roleBadge(role) {
-    const colors = { Administrator: '#818cf8', Moderator: '#a78bfa', Member: '#64748b' };
+    const colors = { Administrator: '#818cf8', Member: '#64748b' };
     return (
         <span className="text-xs font-bold px-3 py-1 rounded-lg" style={{ background: 'rgba(99,102,241,0.1)', color: colors[role] ?? '#64748b' }}>
             {(role ?? 'Member').toUpperCase()}
@@ -73,14 +73,10 @@ export default function ShowUser({ user }) {
     const [flashMsg, setFlashMsg] = useState(flash?.success ?? null);
     const [confirmAction, setConfirmAction] = useState(null);
 
-    const doSuspend = () => router.patch(route('admin.users.suspend', user.id));
-    const doResetPassword = () => router.post(route('admin.users.reset-password', user.id));
     const doDelete = () => router.delete(route('admin.users.destroy', user.id));
 
     const actions = {
-        suspend: { title: `Suspend ${user.name}?`, msg: 'This will lock the user out immediately.', label: 'Suspend', danger: true, fn: doSuspend },
-        reset: { title: `Reset password for ${user.name}?`, msg: 'A new random password will be generated.', label: 'Reset Password', danger: false, fn: doResetPassword },
-        delete: { title: `Delete ${user.name}?`, msg: 'All data will be permanently erased.', label: 'Delete', danger: true, fn: doDelete },
+        delete: { title: `Delete ${user.name}?`, msg: 'All data will be permanently erased. This cannot be undone.', label: 'Delete', danger: true, fn: doDelete },
     };
 
     return (
@@ -163,28 +159,30 @@ export default function ShowUser({ user }) {
                             <StatCard label="Accuracy" value={user.accuracy != null ? Number(user.accuracy).toFixed(1) : null} unit="%" color="#bbc3ff" />
                         </div>
 
-                        {/* System info */}
+                        {/* Activity Info */}
                         <div className="space-y-1">
-                            <h5 className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color: '#bbc3ff' }}>System Info</h5>
-                            <InfoRow label="Last Login" value={timeAgo(user.last_login_at)} />
-                            <InfoRow label="Account Type" value={user.account_type ?? 'Standard'} />
-                            <InfoRow label="MFA Status" value={user.mfa_enabled ? 'Enabled' : 'Disabled'} color={user.mfa_enabled ? '#4edea3' : '#8e8fa2'} />
+                            <h5 className="text-[10px] font-bold uppercase tracking-widest mb-3" style={{ color: '#bbc3ff' }}>Activity Info</h5>
+                            <InfoRow label="Typing Rank"
+                                value={user.typing_rank ? `#${user.typing_rank}` : 'Unranked'}
+                                color={user.typing_rank ? '#4edea3' : '#8e8fa2'} />
+                            <InfoRow label="Last Practice" value={timeAgo(user.last_practice_at)} />
+                            <InfoRow label="Completed Exercises" value={user.completed_exercises ?? 0} />
                             <InfoRow label="Joined" value={formatDate(user.created_at)} />
                         </div>
                     </div>
 
-                    {/* Danger zone */}
+                    {/* Danger Zone */}
                     <div className="rounded-2xl p-8" style={{ background: '#131b2e', border: '1px solid rgba(68,70,86,0.2)' }}>
-                        <h5 className="text-[10px] font-bold uppercase tracking-widest mb-4" style={{ color: '#ffb2b7' }}>Account Actions</h5>
+                        <h5 className="text-[10px] font-bold uppercase tracking-widest mb-4" style={{ color: '#ffb2b7' }}>Danger Zone</h5>
                         <div className="space-y-3">
-                            <button onClick={() => setConfirmAction('reset')} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all" style={{ background: '#2d3449', color: '#dae2fd' }}>
-                                <span className="material-symbols-outlined text-lg">lock_reset</span>Reset Password
-                            </button>
-                            <button onClick={() => setConfirmAction('suspend')} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all"
-                                style={{ border: '1px solid rgba(255,178,183,0.3)', color: '#ffb2b7' }}>
-                                <span className="material-symbols-outlined text-lg">block</span>Suspend Account
-                            </button>
-                            <button onClick={() => setConfirmAction('delete')} className="w-full text-[10px] uppercase tracking-widest font-bold py-2 transition-colors" style={{ color: '#8e8fa2' }}>
+                            <button
+                                onClick={() => setConfirmAction('delete')}
+                                className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all"
+                                style={{ border: '1px solid rgba(255,178,183,0.3)', color: '#ffb2b7', background: 'transparent' }}
+                                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,178,183,0.1)'}
+                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                            >
+                                <span className="material-symbols-outlined text-lg">delete_forever</span>
                                 Delete User Data
                             </button>
                         </div>

@@ -83,7 +83,7 @@ export default function EditUser({ user }) {
                             <div className="grid grid-cols-2 gap-4">
                                 <FIELD label="Role">
                                     <select value={form.role} onChange={e => set('role', e.target.value)} className={inputCls} style={inputStyle}>
-                                        {['Member', 'Moderator', 'Administrator'].map(r => <option key={r} value={r} style={{ background: '#171f33' }}>{r}</option>)}
+                                        {['Member', 'Administrator'].map(r => <option key={r} value={r} style={{ background: '#171f33' }}>{r}</option>)}
                                     </select>
                                     {errors.role && <p className="text-xs mt-1" style={{ color: '#ffb2b7' }}>{errors.role}</p>}
                                 </FIELD>

@@ -55,6 +55,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::resource('users', ManageUsersController::class);
     Route::patch('users/{user}/suspend', [ManageUsersController::class, 'suspend'])->name('users.suspend');
     Route::post('users/{user}/reset-password', [ManageUsersController::class, 'resetPassword'])->name('users.reset-password');
+    Route::resource('typing-texts', SystemTypingTextController::class);
 });
 
 require __DIR__.'/auth.php';

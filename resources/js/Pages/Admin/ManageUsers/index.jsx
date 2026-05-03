@@ -33,7 +33,6 @@ function Avatar({ name, size = 40, shape = 'rounded-lg' }) {
 
 function roleBadgeClass(role) {
     if (role === 'Administrator') return 'bg-indigo-500/10 text-indigo-400';
-    if (role === 'Moderator') return 'bg-indigo-500/10 text-indigo-400';
     return 'bg-surface-container-highest text-outline';
 }
 function statusDotClass(status) {
@@ -63,13 +62,11 @@ function ConfirmModal({ open, title, message, confirmLabel, danger, onConfirm, o
     );
 }
 
-function UserPanel({ user, onClose, onSuspend, onResetPassword, onDelete }) {
+function UserPanel({ user, onClose, onDelete }) {
     const [modal, setModal] = useState(null);
     if (!user) return null;
 
     const actions = {
-        suspend: { title: `Suspend ${user.name}?`, message: 'This will lock the user out immediately. You can reactivate from the edit screen.', confirmLabel: 'Suspend Account', danger: true, fn: onSuspend },
-        reset: { title: `Reset password for ${user.name}?`, message: 'A new random password will be generated. The user must change it on next login.', confirmLabel: 'Reset Password', danger: false, fn: onResetPassword },
         delete: { title: `Permanently delete ${user.name}?`, message: 'All sessions, stats, and data tied to this account will be erased. This cannot be undone.', confirmLabel: 'Delete User Data', danger: true, fn: onDelete },
     };
     const active = modal ? actions[modal] : null;
@@ -118,7 +115,7 @@ function UserPanel({ user, onClose, onSuspend, onResetPassword, onDelete }) {
                             <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-4" style={{ borderColor: '#0b1326', background: user.status === 'Active' ? '#4edea3' : user.status === 'Suspended' ? '#ffb2b7' : '#f59e0b' }} />
                         </div>
                         <h4 className="text-2xl font-bold" style={{ fontFamily: 'Space Grotesk', color: '#dae2fd' }}>{user.name}</h4>
-                        <p className="text-sm" style={{ color: '#8e8fa2' }}>{subtitle}</p>
+                        <p className="text-sm capitalize" style={{ color: '#8e8fa2' }}>{subtitle}</p>
                     </div>
 
                     <div className="space-y-6 flex-1">
@@ -146,41 +143,35 @@ function UserPanel({ user, onClose, onSuspend, onResetPassword, onDelete }) {
                             </div>
                         </div>
 
-                        {/* System Stats */}
+                        {/* Activity Stats */}
                         <div className="space-y-3">
-                            <h5 className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#bbc3ff' }}>System Stats</h5>
+                            <h5 className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#bbc3ff' }}>Activity Stats</h5>
                             <div className="flex justify-between py-2" style={{ borderBottom: '1px solid rgba(68,70,86,0.1)' }}>
-                                <span className="text-sm" style={{ color: '#c5c5d9' }}>Last Login</span>
-                                <span className="text-sm font-medium" style={{ color: '#dae2fd' }}>{timeAgo(user.last_login_at)}</span>
+                                <span className="text-sm" style={{ color: '#c5c5d9' }}>Typing Rank</span>
+                                <span className="text-sm font-medium" style={{ color: user.typing_rank ? '#4edea3' : '#8e8fa2' }}>
+                                    {user.typing_rank ? `#${user.typing_rank}` : 'Unranked'}
+                                </span>
                             </div>
                             <div className="flex justify-between py-2" style={{ borderBottom: '1px solid rgba(68,70,86,0.1)' }}>
-                                <span className="text-sm" style={{ color: '#c5c5d9' }}>Account Type</span>
-                                <span className="text-sm font-medium" style={{ color: '#dae2fd' }}>{user.account_type ?? 'Standard'}</span>
+                                <span className="text-sm" style={{ color: '#c5c5d9' }}>Last Practice</span>
+                                <span className="text-sm font-medium" style={{ color: '#dae2fd' }}>{timeAgo(user.last_practice_at)}</span>
                             </div>
                             <div className="flex justify-between py-2">
-                                <span className="text-sm" style={{ color: '#c5c5d9' }}>MFA Status</span>
-                                <span className="text-sm font-medium" style={{ color: user.mfa_enabled ? '#4edea3' : '#8e8fa2' }}>
-                                    {user.mfa_enabled ? 'Enabled' : 'Disabled'}
-                                </span>
+                                <span className="text-sm" style={{ color: '#c5c5d9' }}>Completed Exercises</span>
+                                <span className="text-sm font-medium" style={{ color: '#dae2fd' }}>{user.completed_exercises ?? 0}</span>
                             </div>
                         </div>
                     </div>
 
                     {/* Actions */}
                     <div className="mt-auto pt-8 space-y-3">
-                        <button onClick={() => setModal('reset')} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all hover:brightness-90" style={{ background: '#2d3449', color: '#dae2fd' }}>
-                            <span className="material-symbols-outlined text-lg">lock_reset</span>
-                            Reset Password
-                        </button>
-                        <button onClick={() => setModal('suspend')} className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all" style={{ border: '1px solid rgba(255,178,183,0.3)', color: '#ffb2b7', background: 'transparent' }}
+                        <button
+                            onClick={() => setModal('delete')}
+                            className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all"
+                            style={{ border: '1px solid rgba(255,178,183,0.3)', color: '#ffb2b7', background: 'transparent' }}
                             onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,178,183,0.1)'}
                             onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                            <span className="material-symbols-outlined text-lg">block</span>
-                            Suspend Account
-                        </button>
-                        <button onClick={() => setModal('delete')} className="w-full text-[10px] uppercase tracking-widest font-bold py-2 transition-colors" style={{ color: '#8e8fa2' }}
-                            onMouseEnter={e => e.currentTarget.style.color = '#c5c5d9'}
-                            onMouseLeave={e => e.currentTarget.style.color = '#8e8fa2'}>
+                            <span className="material-symbols-outlined text-lg">delete_forever</span>
                             Delete User Data
                         </button>
                     </div>
@@ -197,10 +188,7 @@ function UserPanel({ user, onClose, onSuspend, onResetPassword, onDelete }) {
 export default function ManageUsersIndex({ users = [], filters = {} }) {
     const { flash, auth } = usePage().props;
     const [search, setSearch] = useState(filters.search ?? '');
-    const [role, setRole] = useState(filters.role ?? 'All Roles');
-    const [status, setStatus] = useState(filters.status ?? 'All Status');
     const [selectedUser, setSelectedUser] = useState(null);
-    const [activeTab, setActiveTab] = useState('Directory');
     const [flashMsg, setFlashMsg] = useState(flash?.success ?? null);
     const debounceRef = useRef(null);
     // Normalize the `users` prop. If backend sent a paginator object
@@ -227,7 +215,7 @@ export default function ManageUsersIndex({ users = [], filters = {} }) {
             setPageInput(page);
 
             if (page !== currentPage) {
-                router.get(route('admin.users.index'), { search, role, status, page: page }, { 
+                router.get(route('admin.users.index'), { search, page: page }, { 
                     preserveState: true, 
                     preserveScroll: true 
                 });
@@ -246,20 +234,13 @@ export default function ManageUsersIndex({ users = [], filters = {} }) {
     const applyFilters = (overrides = {}) => {
         clearTimeout(debounceRef.current);
         debounceRef.current = setTimeout(() => {
-            router.get(route('admin.users.index'), { search, role, status, ...overrides }, { preserveState: true, replace: true });
+            router.get(route('admin.users.index'), { search, ...overrides }, { preserveState: true, replace: true });
         }, 350);
     };
 
     const handleSearch = v => { setSearch(v); applyFilters({ search: v }); };
-    const handleRole = v => { setRole(v); applyFilters({ role: v }); };
-    const handleStatus = v => { setStatus(v); applyFilters({ status: v }); };
 
-    const doSuspend = u => router.patch(route('admin.users.suspend', u.id), {}, { onSuccess: () => setSelectedUser(null) });
-    const doResetPassword = u => router.post(route('admin.users.reset-password', u.id), {}, { onSuccess: () => setSelectedUser(null) });
     const doDelete = u => router.delete(route('admin.users.destroy', u.id), { onSuccess: () => setSelectedUser(null) });
-
-    const tabs = ['Active Sessions', 'Directory', 'Audit Logs'];
-    const adminInitial = (auth?.user?.name ?? 'A').charAt(0);
 
     return (
         <AdminLayout>
@@ -296,18 +277,6 @@ export default function ManageUsersIndex({ users = [], filters = {} }) {
                         />
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
-                        <div className="flex items-center rounded-lg px-3 py-1.5 gap-2" style={{ background: '#2d3449' }}>
-                            <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#8e8fa2' }}>Role:</span>
-                            <select value={role} onChange={e => handleRole(e.target.value)} className="border-none text-sm py-1 pr-8 focus:ring-0 outline-none" style={{ background: 'transparent', color: '#dae2fd' }}>
-                                {['All Roles', 'Administrator', 'Moderator', 'Member'].map(r => <option key={r} value={r} style={{ background: '#171f33' }}>{r}</option>)}
-                            </select>
-                        </div>
-                        <div className="flex items-center rounded-lg px-3 py-1.5 gap-2" style={{ background: '#2d3449' }}>
-                            <span className="text-[10px] font-bold uppercase tracking-wider" style={{ color: '#8e8fa2' }}>Status:</span>
-                            <select value={status} onChange={e => handleStatus(e.target.value)} className="border-none text-sm py-1 pr-8 focus:ring-0 outline-none" style={{ background: 'transparent', color: '#dae2fd' }}>
-                                {['All Status', 'Active', 'Suspended', 'Pending'].map(s => <option key={s} value={s} style={{ background: '#171f33' }}>{s}</option>)}
-                            </select>
-                        </div>
                         <Link href={route('admin.users.create')} className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all hover:brightness-110" style={{ background: '#00a572', color: '#f1f0ff' }}>
                             <span className="material-symbols-outlined text-lg">person_add</span>
                             Create User
@@ -320,8 +289,8 @@ export default function ManageUsersIndex({ users = [], filters = {} }) {
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr style={{ background: '#171f33' }}>
-                                {['User', 'Email Address', 'Joined Date', 'Role', 'Status', 'Actions'].map((col, i) => (
-                                    <th key={col} className={`px-6 py-4 text-[11px] uppercase font-bold tracking-[0.15em]${i === 5 ? ' text-right' : ''}`} style={{ color: '#8e8fa2' }}>
+                                {['User', 'Email Address', 'Joined Date', 'Actions'].map((col, i) => (
+                                    <th key={col} className={`px-6 py-4 text-[11px] uppercase font-bold tracking-[0.15em]${i === 3 ? ' text-right' : ''}`} style={{ color: '#8e8fa2' }}>
                                         {col}
                                     </th>
                                 ))}
@@ -330,7 +299,7 @@ export default function ManageUsersIndex({ users = [], filters = {} }) {
                         <tbody style={{ borderTop: '1px solid rgba(68,70,86,0.1)' }}>
                             {list.length === 0 ? (
                                 <tr>
-                                    <td colSpan={6} className="px-6 py-20 text-center">
+                                    <td colSpan={4} className="px-6 py-20 text-center">
                                         <span className="material-symbols-outlined block mb-3" style={{ fontSize: 48, color: '#2d3449' }}>manage_accounts</span>
                                         <p className="text-sm" style={{ color: '#8e8fa2' }}>No users found</p>
                                     </td>
@@ -349,17 +318,6 @@ export default function ManageUsersIndex({ users = [], filters = {} }) {
                                         </td>
                                         <td className="px-6 py-5 text-sm" style={{ color: '#c5c5d9' }}>{user.email}</td>
                                         <td className="px-6 py-5 text-sm" style={{ color: '#c5c5d9' }}>{formatDate(user.created_at)}</td>
-                                        <td className="px-6 py-5">
-                                            <span className={`text-[10px] font-bold px-2 py-1 rounded ${roleBadgeClass(user.role)}`}>
-                                                {(user.role ?? 'Member').toUpperCase()}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-5">
-                                            <div className="flex items-center gap-2">
-                                                <span className={`w-2 h-2 rounded-full ${statusDotClass(user.status)}`} />
-                                                <span className={`text-sm ${statusTextClass(user.status)}`}>{user.status ?? 'Unknown'}</span>
-                                            </div>
-                                        </td>
                                         <td className="px-6 py-5 text-right">
                                             <div className="flex items-center justify-end gap-1">
                                                 <Link href={route('admin.users.show', user.id)} onClick={e => e.stopPropagation()} title="View" className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-indigo-500/10" style={{ color: '#818cf8' }}>
@@ -382,7 +340,7 @@ export default function ManageUsersIndex({ users = [], filters = {} }) {
                     {(pagination?.last_page ?? lastPage) > 1 && (
                         <div className="flex items-center justify-between p-6 border-t border-[#444656]/10 rounded-b-xl" style={{ background: '#131b2e' }}>
                             <button
-                                onClick={() => prevUrl ? router.get(prevUrl, {}, { preserveState: true, preserveScroll: true }) : (currentPage > 1 && router.get(route('admin.users.index'), { search, role, status, page: currentPage - 1 }, { preserveState: true, preserveScroll: true }))}
+                                onClick={() => prevUrl ? router.get(prevUrl, {}, { preserveState: true, preserveScroll: true }) : (currentPage > 1 && router.get(route('admin.users.index'), { search, page: currentPage - 1 }, { preserveState: true, preserveScroll: true }))}
                                 disabled={!prevUrl && currentPage <= 1}
                                 className="px-5 py-2 text-sm font-semibold text-slate-400 bg-[#222a3d] rounded-lg hover:text-white hover:bg-[#3d5afe]/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                             >
@@ -404,7 +362,7 @@ export default function ManageUsersIndex({ users = [], filters = {} }) {
                             </div>
                             
                             <button
-                                onClick={() => nextUrl ? router.get(nextUrl, {}, { preserveState: true, preserveScroll: true }) : (currentPage < (pagination?.last_page ?? lastPage) && router.get(route('admin.users.index'), { search, role, status, page: currentPage + 1 }, { preserveState: true, preserveScroll: true }))}
+                                onClick={() => nextUrl ? router.get(nextUrl, {}, { preserveState: true, preserveScroll: true }) : (currentPage < (pagination?.last_page ?? lastPage) && router.get(route('admin.users.index'), { search, page: currentPage + 1 }, { preserveState: true, preserveScroll: true }))}
                                 disabled={!nextUrl && currentPage >= (pagination?.last_page ?? lastPage)}
                                 className="px-5 py-2 text-sm font-semibold text-slate-400 bg-[#222a3d] rounded-lg hover:text-white hover:bg-[#3d5afe]/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                             >
@@ -417,8 +375,6 @@ export default function ManageUsersIndex({ users = [], filters = {} }) {
 
             {selectedUser && (
                 <UserPanel user={selectedUser} onClose={() => setSelectedUser(null)}
-                    onSuspend={() => doSuspend(selectedUser)}
-                    onResetPassword={() => doResetPassword(selectedUser)}
                     onDelete={() => doDelete(selectedUser)} />
             )}
         </AdminLayout>

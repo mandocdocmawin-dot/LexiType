@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, usePage } from '@inertiajs/react';
 import Leaderboard from './Leaderboard';
 import AboutModal from './AboutApp';
-import Dropdown from '@/Components/Dropdown'; // Imported Dropdown component
+import Dropdown from '@/Components/Dropdown';
 
 export default function Navbar({ auth }) {
     const { url } = usePage();
@@ -75,6 +75,19 @@ export default function Navbar({ auth }) {
                         {/* Admin Tools */}
                         {auth?.user?.role === 'admin' && (
                             <>
+                                {/* System Texts Button (Icon with Text) */}
+                                <Link 
+                                    href={route('admin.typing-texts.index')}
+                                    className={`group px-3 py-2 rounded-lg flex items-center gap-2 transition-all ${
+                                        url?.startsWith('/admin/typing-texts') 
+                                            ? 'text-[#bbc3ff] bg-[#222a3d]/50' 
+                                            : 'text-slate-400 hover:text-white hover:bg-[#222a3d]/30'
+                                    }`}
+                                >
+                                    <span className="material-symbols-outlined">text_snippet</span>
+                                    <span className="text-sm font-semibold">System Texts</span>
+                                </Link>
+
                                 {/* Manage Users Button */}
                                 <Link 
                                     href={route('admin.users.index')}
