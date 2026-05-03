@@ -10,6 +10,9 @@ Users complete typing sessions that record metrics (WPM, accuracy, duration) and
 
 - Project scaffolding: Laravel backend with Inertia + React frontend, Vite build, and Tailwind CSS styling.
 - Authentication & user profiles: register/login, edit profile, and account management flows.
+- Middleware (EnsuerUserIsAdmin)
+- Authorization (SystemTypingTextPolicy, UserFeedbackPolicy, UserPolicy, AppServiceProvider)
+- Eloquent Relationships (HasMany, HasOne, belongsTo())
 - Typing session recording: `POST /typing-sessions` stores `wpm_score`, `accuracy_percentage`, `duration_seconds`, `difficulty_played`, and optional `mistakes[]`.
 - Keystroke tracking: `keystrokeMistake` model captures `expected_character`, `typed_char`, and `time_to_press_ms` per session.
 - User analytics & stats: per‑user history, paginated sessions, last‑30 sessions chart data, averages, heatmap of mistakes, and trouble cluster detection.
