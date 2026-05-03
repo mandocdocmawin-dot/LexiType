@@ -30,9 +30,9 @@ function ConfirmModal({ open, title, message, confirmLabel, danger, onConfirm, o
     );
 }
 
-export default function CustomExercisesIndex({ exercises = [] }) {
+export default function SystemTypingTextsIndex({ texts = [] }) {
     const { flash, auth } = usePage().props;
-    const [selected, setSelected] = useState(exercises[0] ?? null);
+    const [selected, setSelected] = useState(texts[0] ?? null);
     const [creating, setCreating] = useState(false);
     const [activeTab, setActiveTab] = useState('Dashboard');
     const [flashMsg, setFlashMsg] = useState(flash?.success ?? null);
@@ -52,7 +52,7 @@ export default function CustomExercisesIndex({ exercises = [] }) {
         }
     }, [flash]);
 
-    // When selected exercise changes, populate editor
+    // When selected text changes, populate editor
     useEffect(() => {
         if (selected && !creating) {
             setTitle(selected.category ?? '');
@@ -71,35 +71,35 @@ export default function CustomExercisesIndex({ exercises = [] }) {
         setIsActive(false);
     };
 
-    const selectExercise = (ex) => {
+    const selectText = (txt) => {
         setCreating(false);
-        setSelected(ex);
+        setSelected(txt);
     };
 
     const handleSaveDraft = () => {
         if (creating) {
-            router.post(route('admin.exercises.store'), { category: title, content, difficulty_level: difficulty, is_active: false }, {
+            router.post(route('admin.typing-texts.store'), { category: title, content, difficulty_level: difficulty, is_active: false }, {
                 onSuccess: () => { setCreating(false); },
             });
         } else if (selected) {
-            router.put(route('admin.exercises.update', selected.id), { category: title, content, difficulty_level: difficulty, is_active: false });
+            router.put(route('admin.typing-texts.update', selected.id), { category: title, content, difficulty_level: difficulty, is_active: false });
         }
     };
 
     const handlePublish = () => {
         if (creating) {
-            router.post(route('admin.exercises.store'), { category: title, content, difficulty_level: difficulty, is_active: true }, {
+            router.post(route('admin.typing-texts.store'), { category: title, content, difficulty_level: difficulty, is_active: true }, {
                 onSuccess: () => { setCreating(false); },
             });
         } else if (selected) {
-            router.put(route('admin.exercises.update', selected.id), { category: title, content, difficulty_level: difficulty, is_active: true });
+            router.put(route('admin.typing-texts.update', selected.id), { category: title, content, difficulty_level: difficulty, is_active: true });
         }
     };
 
     const handleDelete = () => {
         if (selected) {
-            router.delete(route('admin.exercises.destroy', selected.id), {
-                onSuccess: () => { setSelected(exercises[0] ?? null); setDeleteModal(false); },
+            router.delete(route('admin.typing-texts.destroy', selected.id), {
+                onSuccess: () => { setSelected(texts[0] ?? null); setDeleteModal(false); },
             });
         }
     };
@@ -110,7 +110,7 @@ export default function CustomExercisesIndex({ exercises = [] }) {
 
     return (
         <AdminLayout>
-            <Head title="Lab Admin Exercises" />
+            <Head title="Lab Admin Typing Texts" />
             <style>{`
                 ::-webkit-scrollbar { width: 6px; }
                 ::-webkit-scrollbar-track { background: #0b1326; }
@@ -126,7 +126,6 @@ export default function CustomExercisesIndex({ exercises = [] }) {
                 </div>
             )}
 
-
             {/* ── Master-Detail Content ── */}
             <div className="flex flex-1 overflow-hidden">
 
@@ -138,25 +137,25 @@ export default function CustomExercisesIndex({ exercises = [] }) {
                             className="w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
                             style={{ fontFamily: 'Space Grotesk', background: '#3d5afe', color: '#f1f0ff', boxShadow: '0 8px 24px rgba(61,90,254,0.2)' }}>
                             <span className="material-symbols-outlined">add_circle</span>
-                            Create New Exercise
+                            Create New Typing Text
                         </button>
                     </div>
                     <div className="flex-1 overflow-y-auto px-4 pb-6 space-y-2">
                         <div className="px-2 py-2">
-                            <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#64748b' }}>Recent Exercises</span>
+                            <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#64748b' }}>Recent Typing Texts</span>
                         </div>
 
-                        {exercises.length === 0 && (
+                        {texts.length === 0 && (
                             <div className="px-4 py-8 text-center">
                                 <span className="material-symbols-outlined block mb-2" style={{ fontSize: 36, color: '#2d3449' }}>science</span>
-                                <p className="text-xs" style={{ color: '#64748b' }}>No exercises yet. Create one!</p>
+                                <p className="text-xs" style={{ color: '#64748b' }}>No typing texts yet. Create one!</p>
                             </div>
                         )}
 
-                        {exercises.map(ex => {
-                            const isSelected = !creating && selected?.id === ex.id;
+                        {texts.map(txt => {
+                            const isSelected = !creating && selected?.id === txt.id;
                             return (
-                                <div key={ex.id} onClick={() => selectExercise(ex)}
+                                <div key={txt.id} onClick={() => selectText(txt)}
                                     className="group p-4 cursor-pointer transition-colors"
                                     style={isSelected
                                         ? { background: 'rgba(45,52,73,0.6)', borderLeft: '4px solid #bbc3ff', borderRadius: '0 12px 12px 0' }
@@ -165,40 +164,40 @@ export default function CustomExercisesIndex({ exercises = [] }) {
                                     onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'transparent'; }}>
                                     <div className="flex justify-between items-start mb-1">
                                         <h4 style={{ fontFamily: 'Space Grotesk', fontWeight: isSelected ? 700 : 600, color: isSelected ? '#dae2fd' : '#cbd5e1' }}>
-                                            {ex.category || 'Untitled'}
+                                            {txt.category || 'Untitled'}
                                         </h4>
                                         <span className="material-symbols-outlined text-lg"
-                                            style={ex.is_active
+                                            style={txt.is_active
                                                 ? { color: '#4edea3', fontVariationSettings: "'FILL' 1" }
                                                 : { color: '#475569' }}>
-                                            {ex.is_active ? 'check_circle' : 'radio_button_unchecked'}
+                                            {txt.is_active ? 'check_circle' : 'radio_button_unchecked'}
                                         </span>
                                     </div>
                                     <p className="text-xs line-clamp-1" style={{ color: isSelected ? '#c5c5d9' : '#64748b' }}>
-                                        {ex.content?.substring(0, 60) || 'No content...'}
+                                        {txt.content?.substring(0, 60) || 'No content...'}
                                     </p>
                                      <div className="mt-3 flex items-center gap-3">
                                         <span className="text-[10px] px-2 py-1 rounded font-mono" style={{ background: '#020617', color: '#94a3b8' }}>
-                                            {charCount(ex.content)} chars
+                                            {charCount(txt.content)} chars
                                         </span>
-                                        {ex.is_active ? (
+                                        {txt.is_active ? (
                                             <span className="text-[10px] px-2 py-1 rounded font-bold" style={{ background: 'rgba(78,222,163,0.1)', color: '#4edea3' }}>PUBLISHED</span>
                                         ) : (
                                             <span className="text-[10px] px-2 py-1 rounded font-bold" style={{ background: 'rgba(68,70,86,0.3)', color: '#94a3b8' }}>DRAFT</span>
                                         )}
                                         {/* Action buttons — visible on hover */}
                                         <div className="ml-auto flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Link href={route('admin.exercises.show', ex.id)} onClick={e => e.stopPropagation()} title="View"
+                                            <Link href={route('admin.typing-texts.show', txt.id)} onClick={e => e.stopPropagation()} title="View"
                                                 className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-indigo-500/10"
                                                 style={{ color: '#818cf8' }}>
                                                 <span className="material-symbols-outlined" style={{ fontSize: 16 }}>visibility</span>
                                             </Link>
-                                            <Link href={route('admin.exercises.edit', ex.id)} onClick={e => e.stopPropagation()} title="Edit"
+                                            <Link href={route('admin.typing-texts.edit', txt.id)} onClick={e => e.stopPropagation()} title="Edit"
                                                 className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-amber-500/10"
                                                 style={{ color: '#f59e0b' }}>
                                                 <span className="material-symbols-outlined" style={{ fontSize: 16 }}>edit</span>
                                             </Link>
-                                            <button onClick={e => { e.stopPropagation(); setDeleteModal(true); setSelected(ex); }} title="Delete"
+                                            <button onClick={e => { e.stopPropagation(); setDeleteModal(true); setSelected(txt); }} title="Delete"
                                                 className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors hover:bg-red-500/10"
                                                 style={{ color: '#ffb2b7' }}>
                                                 <span className="material-symbols-outlined" style={{ fontSize: 16 }}>delete</span>
@@ -224,18 +223,18 @@ export default function CustomExercisesIndex({ exercises = [] }) {
                                 <div className="flex items-center gap-2 text-sm font-medium" style={{ color: '#64748b' }}>
                                     <span>Lab</span>
                                     <span className="material-symbols-outlined text-sm">chevron_right</span>
-                                    <span>Exercises</span>
+                                    <span>Typing Texts</span>
                                     <span className="material-symbols-outlined text-sm">chevron_right</span>
-                                    <span style={{ color: '#bbc3ff' }}>{creating ? 'New Exercise' : (title || 'Untitled')}</span>
+                                    <span style={{ color: '#bbc3ff' }}>{creating ? 'New Typing Text' : (title || 'Untitled')}</span>
                                 </div>
 
                                 {/* Editor */}
                                 <div className="space-y-8">
                                     {/* Title */}
                                     <div className="space-y-2">
-                                        <label className="text-[10px] uppercase tracking-widest font-bold ml-1" style={{ color: 'rgba(99,102,241,0.8)' }}>Exercise Title</label>
+                                        <label className="text-[10px] uppercase tracking-widest font-bold ml-1" style={{ color: 'rgba(99,102,241,0.8)' }}>Typing Text Title</label>
                                         <input type="text" value={title} onChange={e => setTitle(e.target.value)}
-                                            placeholder="Enter exercise title..."
+                                            placeholder="Enter typing text title..."
                                             className="w-full bg-transparent border-none p-0 text-5xl font-bold focus:ring-0 focus:outline-none tracking-tight"
                                             style={{ fontFamily: 'Space Grotesk', color: '#dae2fd', caretColor: '#bbc3ff' }}
                                         />
@@ -254,7 +253,7 @@ export default function CustomExercisesIndex({ exercises = [] }) {
                                             <textarea
                                                 value={content}
                                                 onChange={e => { if (e.target.value.length <= MAX_CHARS) setContent(e.target.value); }}
-                                                placeholder="Paste or type the typing exercise content here. Use varied vocabulary for better practice..."
+                                                placeholder="Paste or type the typing practice content here. Use varied vocabulary for better practice..."
                                                 className="w-full h-[450px] rounded-2xl p-8 text-xl leading-relaxed focus:ring-2 focus:border-transparent transition-all outline-none"
                                                 style={{
                                                     fontFamily: 'Inter', background: '#060e20', color: '#c5c5d9',
@@ -291,7 +290,7 @@ export default function CustomExercisesIndex({ exercises = [] }) {
                                             onMouseEnter={e => e.currentTarget.style.background = 'rgba(210,35,72,0.1)'}
                                             onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                                             <span className="material-symbols-outlined group-hover:scale-110 transition-transform">delete</span>
-                                            Delete Exercise
+                                            Delete Typing Text
                                         </button>
                                     ) : <div />}
                                     <div className="flex items-center gap-4">
@@ -304,7 +303,7 @@ export default function CustomExercisesIndex({ exercises = [] }) {
                                             className="px-10 py-3 rounded-xl font-bold text-sm flex items-center gap-2 active:scale-95 transition-all"
                                             style={{ background: '#3d5afe', color: '#f1f0ff', boxShadow: '0 8px 24px rgba(61,90,254,0.3)' }}>
                                             <span className="material-symbols-outlined text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>publish</span>
-                                            Publish Exercise
+                                            Publish Typing Text
                                         </button>
                                     </div>
                                 </div>
@@ -315,7 +314,7 @@ export default function CustomExercisesIndex({ exercises = [] }) {
                         <div className="flex-1 flex items-center justify-center relative z-20">
                             <div className="text-center">
                                 <span className="material-symbols-outlined block mb-4" style={{ fontSize: 64, color: '#2d3449' }}>science</span>
-                                <h3 className="text-xl font-bold mb-2" style={{ fontFamily: 'Space Grotesk', color: '#64748b' }}>Select an exercise</h3>
+                                <h3 className="text-xl font-bold mb-2" style={{ fontFamily: 'Space Grotesk', color: '#64748b' }}>Select a typing text</h3>
                                 <p className="text-sm" style={{ color: '#475569' }}>Choose from the list or create a new one</p>
                             </div>
                         </div>
@@ -325,8 +324,8 @@ export default function CustomExercisesIndex({ exercises = [] }) {
 
             <ConfirmModal open={deleteModal}
                 title={`Delete "${title}"?`}
-                message="This exercise will be permanently removed. This cannot be undone."
-                confirmLabel="Delete Exercise" danger
+                message="This typing text will be permanently removed. This cannot be undone."
+                confirmLabel="Delete Typing Text" danger
                 onCancel={() => setDeleteModal(false)}
                 onConfirm={handleDelete} />
         </AdminLayout>
