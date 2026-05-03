@@ -8,12 +8,25 @@ use Illuminate\Auth\Access\Response;
 class UserPolicy
 {
     /**
+     * Determine whether the user can view the list of users (index).
+     */
+    public function viewAny(User $user): bool
+    {
+        return $user->role === 'admin';
+    }
+
+    /**
      * Determine whether the user can view the model.
      */
     public function view(User $user, User $model): bool
     {
         // Pwedeng makita ng user ang sarili niya, o ng admin ang lahat
         return $user->id === $model->id || $user->role === 'admin';
+    }
+
+    public function create(User $user): bool
+    {
+        return $user->role === 'admin';
     }
 
     /**
