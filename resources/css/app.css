@@ -7,3 +7,32 @@
         @apply bg-background text-on-surface font-body antialiased;
     }
 }
+
+
+@layer utilities {
+    /* Custom Sleek Dark Scrollbar */
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 6px; /* Manipis na scrollbar */
+        height: 6px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent; 
+        border-radius: 8px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #444656; 
+        border-radius: 8px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #bbc3ff;    
+    }
+
+    /* Para sa Firefox Support */
+    .custom-scrollbar {
+        scrollbar-width: thin;
+        scrollbar-color: #444656 transparent;
+    }
+}

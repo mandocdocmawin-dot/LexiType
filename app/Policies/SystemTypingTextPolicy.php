@@ -12,7 +12,7 @@ class SystemTypingTextPolicy
      */
     public function viewAny(User $user): bool
     {
-        return $user->isAdminOrModerator();
+        return $user->isAdmin();
     }
 
     /**
@@ -20,7 +20,7 @@ class SystemTypingTextPolicy
      */
     public function view(User $user, SystemTypingText $exercise): bool
     {
-        return $user->isAdminOrModerator();
+        return $user->isAdmin();
     }
 
     /**
@@ -28,7 +28,7 @@ class SystemTypingTextPolicy
      */
     public function create(User $user): bool
     {
-        return $user->isAdminOrModerator();
+        return $user->isAdmin();
     }
 
     /**
@@ -36,7 +36,7 @@ class SystemTypingTextPolicy
      */
     public function update(User $user, SystemTypingText $exercise): bool
     {
-        return $user->isAdminOrModerator();
+        return $user->isAdmin();
     }
 
     /**
@@ -44,6 +44,6 @@ class SystemTypingTextPolicy
      */
     public function delete(User $user, SystemTypingText $exercise): bool
     {
-        return $user->isAdminOrModerator();
+        return $user->isAdmin();
     }
 }

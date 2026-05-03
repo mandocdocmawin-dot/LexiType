@@ -13,7 +13,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
-#[Fillable(['name', 'email', 'password', 'role', 'status', 'accuracy', 'account_type', 'mfa_enabled', 'last_login_at'])]  
+#[Fillable(['name', 'email', 'password', 'role', 'bio'])]  
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable  
 {
@@ -39,21 +39,6 @@ class User extends Authenticatable
         return in_array($role, ['admin', 'administrator']);
     }
 
-    public function isModerator(): bool
-    {
-        return strtolower($this->role ?? '') === 'moderator';
-    }
-
-    public function isAdminOrModerator(): bool
-    {
-        return $this->isAdmin() || $this->isModerator();
-    }   
-
-    public function profile(): HasOne
-    {
-        return $this->hasOne(UserProfile::class, 'user_id');
-    }
-
     public function feedbacks(): HasMany
     {
         return $this->hasMany(UserFeedback::class, 'user_id');
@@ -67,11 +52,6 @@ class User extends Authenticatable
     public function systemTypingTexts(): HasMany
     {
         return $this->hasMany(SystemTypingText::class, 'user_id');
-    }
-
-    public function aiRecommendations(): HasMany
-    {
-        return $this->hasMany(AIRecommendation::class, 'user_id');
     }
 
     public function stats(): HasOne

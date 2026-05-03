@@ -71,19 +71,19 @@ export default function EditUser({ user }) {
 
                         <form onSubmit={handleSubmit} className="space-y-6">
                             <FIELD label="Full Name">
-                                <input value={form.name} onChange={e => set('name', e.target.value)} className={inputCls} style={inputStyle} />
+                                <input value={form.name} onChange={e => set('name', e.target.value)} className={inputCls} style={inputStyle} maxLength={25}/>
                                 {errors.name && <p className="text-xs mt-1" style={{ color: '#ffb2b7' }}>{errors.name}</p>}
                             </FIELD>
 
                             <FIELD label="Email Address">
-                                <input type="email" value={form.email} onChange={e => set('email', e.target.value)} className={inputCls} style={inputStyle} />
+                                <input type="email" value={form.email} onChange={e => set('email', e.target.value)} className={inputCls} style={inputStyle} maxLength={100}/>
                                 {errors.email && <p className="text-xs mt-1" style={{ color: '#ffb2b7' }}>{errors.email}</p>}
                             </FIELD>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <FIELD label="Role">
                                     <select value={form.role} onChange={e => set('role', e.target.value)} className={inputCls} style={inputStyle}>
-                                        {['Member', 'Moderator', 'Administrator'].map(r => <option key={r} value={r} style={{ background: '#171f33' }}>{r}</option>)}
+                                        {['Member', 'Administrator'].map(r => <option key={r} value={r} style={{ background: '#171f33' }}>{r}</option>)}
                                     </select>
                                     {errors.role && <p className="text-xs mt-1" style={{ color: '#ffb2b7' }}>{errors.role}</p>}
                                 </FIELD>

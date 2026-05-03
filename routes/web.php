@@ -6,9 +6,8 @@ use App\Http\Controllers\SystemTypingTextController;
 use App\Http\Controllers\UserFeedbackController;
 use App\Http\Controllers\AIAnalysisController;
 use App\Http\Controllers\LeaderboardController;
-use App\Http\Controllers\CustomExerciseController;
-use App\Http\Controllers\Admin\ManageUsersController;
-use App\Http\Controllers\Admin\TypingTextsController;
+use App\Http\Controllers\DashboardController; 
+use App\Http\Controllers\ManageUsersController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -23,14 +22,6 @@ Route::get('/', function () {
     ]);
 });
 
-Route::get('/dashboard', function () {
-    $role = strtolower(auth()->user()->role ?? '');
-    if (in_array($role, ['admin', 'administrator', 'moderator'])) {
-        return redirect()->route('admin.overview');
-    }
-    return redirect('/');
-})->middleware(['auth', 'verified'])->name('dashboard');
-
 Route::get('/about', function () {
     return Inertia::render('AboutApp');
 })->name('about');
@@ -43,6 +34,11 @@ Route::get('/typing-texts/list', [SystemTypingTextController::class, 'getTextsLi
 
 // --- ROUTES NA KAILANGAN NAKALOG-IN ---
 Route::middleware('auth')->group(function () {
+
+    Route::get('/dashboard', [DashboardController::class, 'index'])
+        ->middleware('verified')
+        ->name('dashboard');
+
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -60,66 +56,11 @@ Route::middleware('auth')->group(function () {
 Route::get('/api/leaderboard', [LeaderboardController::class, 'index'])->name('leaderboard.api');
 
 // --- ADMIN ROUTES ---
-
-// --- ADMIN DASHBOARD ROUTE ---
-use App\Http\Controllers\Admin\OverviewController;
-Route::middleware(['auth', 'isAdmin'])->prefix('admin')->name('admin.')->group(function () {
-    Route::get('/overview', [OverviewController::class, 'index'])->name('overview');
-
-    Route::resource('feedback', UserFeedbackController::class)->only(['index', 'destroy']);
-
-    // List all users
-    Route::get('/users', [ManageUsersController::class, 'index'])
-        ->name('users.index');
-
-    // Show create user form
-    Route::get('/users/create', [ManageUsersController::class, 'create'])
-        ->name('users.create');
-
-    // Store new user
-    Route::post('/users', [ManageUsersController::class, 'store'])
-        ->name('users.store');
-
-    // Show single user profile
-    Route::get('/users/{user}', [ManageUsersController::class, 'show'])
-        ->name('users.show');
-
-    // Show edit user form
-    Route::get('/users/{user}/edit', [ManageUsersController::class, 'edit'])
-        ->name('users.edit');
-
-    // Update user
-    Route::put('/users/{user}', [ManageUsersController::class, 'update'])
-        ->name('users.update');
-
-    // Suspend user account
-    Route::patch('/users/{user}/suspend', [ManageUsersController::class, 'suspend'])
-        ->name('users.suspend');
-
-    // Reset user password
-    Route::post('/users/{user}/reset-password', [ManageUsersController::class, 'resetPassword'])
-        ->name('users.reset-password');
-
-    // Delete user and all their data
-    Route::delete('/users/{user}', [ManageUsersController::class, 'destroy'])
-        ->name('users.destroy');
-
-    // Lab / Custom Exercises
-    Route::get('/lab', [TypingTextsController::class, 'index'])
-        ->name('exercises.index');
-    Route::get('/lab/create', [TypingTextsController::class, 'create'])
-        ->name('exercises.create');
-    Route::post('/lab', [TypingTextsController::class, 'store'])
-        ->name('exercises.store');
-    Route::get('/lab/{exercise}', [TypingTextsController::class, 'show'])
-        ->name('exercises.show');
-    Route::get('/lab/{exercise}/edit', [TypingTextsController::class, 'edit'])
-        ->name('exercises.edit');
-    Route::put('/lab/{exercise}', [TypingTextsController::class, 'update'])
-        ->name('exercises.update');
-    Route::delete('/lab/{exercise}', [TypingTextsController::class, 'destroy'])
-        ->name('exercises.destroy');
-
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::resource('feedback', UserFeedbackController::class)->only(['index', 'show', 'destroy']);
+    Route::resource('users', ManageUsersController::class);
+    Route::patch('users/{user}/suspend', [ManageUsersController::class, 'suspend'])->name('users.suspend');
+    Route::post('users/{user}/reset-password', [ManageUsersController::class, 'resetPassword'])->name('users.reset-password');
 });
 
 require __DIR__.'/auth.php';

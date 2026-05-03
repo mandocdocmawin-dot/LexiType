@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 #[Fillable(['user_id', 'category', 'message'])]
-#[Hidden(['created_at', 'updated_at'])]
+#[Hidden(['updated_at'])]
 class UserFeedback extends Model
 {
     use HasFactory;

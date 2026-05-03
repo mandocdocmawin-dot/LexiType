@@ -18,12 +18,11 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->alias([
-            'admin' => \App\Http\Middleware\IsAdmin::class,
-            'isAdmin' => \App\Http\Middleware\IsAdmin::class,
+            'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
         ]);
 
         $middleware->redirectUsersTo(fn () => match(strtolower(auth()->user()->role ?? '')) {
-            'admin', 'administrator', 'moderator' => route('admin.overview', absolute: false),
+            'admin', 'administrator' => route('admin.overview', absolute: false),
             default => '/',
         });
     })

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { router, usePage, Link } from '@inertiajs/react';
 import AdminLayout from '@/Layouts/AdminLayout';
 import { Head } from '@inertiajs/react';
+import Navbar from '@/Components/Navbar';
 
 function timeAgo(dateStr) {
     if (!dateStr) return 'Never';
@@ -32,7 +33,6 @@ function Avatar({ name, size = 40, shape = 'rounded-lg' }) {
 
 function roleBadgeClass(role) {
     if (role === 'Administrator') return 'bg-indigo-500/10 text-indigo-400';
-    if (role === 'Moderator') return 'bg-indigo-500/10 text-indigo-400';
     return 'bg-surface-container-highest text-outline';
 }
 function statusDotClass(status) {
@@ -74,6 +74,26 @@ function UserPanel({ user, onClose, onDelete }) {
 
     return (
         <>
+            <Head title="Stats">
+                <link rel="preconnect" href="https://fonts.googleapis.com" />
+                <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+                <link 
+                    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" 
+                    rel="stylesheet" 
+                />
+                <link 
+                    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" 
+                    rel="stylesheet" 
+                />
+            </Head>
+            
+            <style dangerouslySetInnerHTML={{
+                __html: `
+                    .material-symbols-outlined {
+                        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+                    }
+                `
+            }} />
             <div className="fixed inset-0 z-40" style={{ background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(4px)' }} onClick={onClose} />
             <aside
                 className="fixed top-0 right-0 h-full overflow-y-auto z-50 shadow-2xl"
@@ -95,7 +115,7 @@ function UserPanel({ user, onClose, onDelete }) {
                             <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-4" style={{ borderColor: '#0b1326', background: user.status === 'Active' ? '#4edea3' : user.status === 'Suspended' ? '#ffb2b7' : '#f59e0b' }} />
                         </div>
                         <h4 className="text-2xl font-bold" style={{ fontFamily: 'Space Grotesk', color: '#dae2fd' }}>{user.name}</h4>
-                        <p className="text-sm" style={{ color: '#8e8fa2' }}>{subtitle}</p>
+                        <p className="text-sm capitalize" style={{ color: '#8e8fa2' }}>{subtitle}</p>
                     </div>
 
                     <div className="space-y-6 flex-1">
@@ -165,37 +185,43 @@ function UserPanel({ user, onClose, onDelete }) {
     );
 }
 
-const USERS_PAGE_SIZE = 5;
-
 export default function ManageUsersIndex({ users = [], filters = {} }) {
-    const { flash } = usePage().props;
+    const { flash, auth } = usePage().props;
     const [search, setSearch] = useState(filters.search ?? '');
     const [selectedUser, setSelectedUser] = useState(null);
     const [flashMsg, setFlashMsg] = useState(flash?.success ?? null);
-    const [page, setPage] = useState(1);
     const debounceRef = useRef(null);
+    // Normalize the `users` prop. If backend sent a paginator object
+    // it will typically be { data: [...], current_page, last_page, ... }
+    // If the backend sent a plain array (old behavior) we keep that too.
+    const list = Array.isArray(users) ? users : (users?.data ?? []);
+    const pagination = users && !Array.isArray(users) ? (users.meta ?? users) : null;
+    const currentPage = pagination?.current_page ?? pagination?.currentPage ?? 1;
+    const lastPage = pagination?.last_page ?? pagination?.lastPage ?? 1;
+    const prevUrl = users && !Array.isArray(users) ? users.prev_page_url : null;
+    const nextUrl = users && !Array.isArray(users) ? users.next_page_url : null;
 
-    const totalPages = Math.max(1, Math.ceil(users.length / USERS_PAGE_SIZE));
-    const paginatedUsers = users.slice((page - 1) * USERS_PAGE_SIZE, page * USERS_PAGE_SIZE);
+    const [pageInput, setPageInput] = useState(currentPage);
 
-    // Reset to page 1 when users list changes (filters)
-    useEffect(() => { setPage(1); }, [users.length]);
+    useEffect(() => { setPageInput(currentPage); }, [currentPage]);
 
-    // Auto-poll every 30 seconds to keep stats fresh
-    useEffect(() => {
-        const interval = setInterval(() => {
-            router.reload({ only: ['users'], preserveState: true });
-        }, 30000);
-        return () => clearInterval(interval);
-    }, []);
+    const handlePageJump = (e) => {
+        if (e.key === 'Enter' || e.type === 'blur') {
+            let page = parseInt(pageInput);
 
-    // Keep selectedUser in sync when users prop refreshes
-    useEffect(() => {
-        if (selectedUser) {
-            const fresh = users.find(u => u.id === selectedUser.id);
-            if (fresh) setSelectedUser(fresh);
+            if (isNaN(page) || page < 1) page = 1;
+            if (page > lastPage) page = lastPage;
+
+            setPageInput(page);
+
+            if (page !== currentPage) {
+                router.get(route('admin.users.index'), { search, page: page }, { 
+                    preserveState: true, 
+                    preserveScroll: true 
+                });
+            }
         }
-    }, [users]);
+    };
 
     useEffect(() => {
         if (flash?.success) {
@@ -216,7 +242,6 @@ export default function ManageUsersIndex({ users = [], filters = {} }) {
 
     const doDelete = u => router.delete(route('admin.users.destroy', u.id), { onSuccess: () => setSelectedUser(null) });
 
-
     return (
         <AdminLayout>
             <Head title="User Management" />
@@ -234,11 +259,15 @@ export default function ManageUsersIndex({ users = [], filters = {} }) {
                 </div>
             )}
 
+            <Navbar auth={auth} />
+
+
             {/* ── Content ── */}
-            <section className="p-8 flex flex-col" style={{ height: '100vh', overflow: 'hidden' }}>
+            {/* Added mt-20 to push this section down below the Navbar */}
+            <section className="p-8 mt-20 space-y-8 flex-1">
 
                 {/* Filter Bar */}
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-6 rounded-xl mb-8" style={{ background: '#131b2e' }}>
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-6 rounded-xl" style={{ background: '#131b2e' }}>
                     <div className="relative flex-1 max-w-lg">
                         <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2" style={{ color: '#8e8fa2' }}>search</span>
                         <input type="text" placeholder="Search by username, email or ID..."
@@ -256,7 +285,7 @@ export default function ManageUsersIndex({ users = [], filters = {} }) {
                 </div>
 
                 {/* Table */}
-                <div className="rounded-xl overflow-hidden flex-1 flex flex-col" style={{ background: '#131b2e' }}>
+                <div className="rounded-xl overflow-hidden" style={{ background: '#131b2e' }}>
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr style={{ background: '#171f33' }}>
@@ -268,7 +297,7 @@ export default function ManageUsersIndex({ users = [], filters = {} }) {
                             </tr>
                         </thead>
                         <tbody style={{ borderTop: '1px solid rgba(68,70,86,0.1)' }}>
-                            {paginatedUsers.length === 0 ? (
+                            {list.length === 0 ? (
                                 <tr>
                                     <td colSpan={4} className="px-6 py-20 text-center">
                                         <span className="material-symbols-outlined block mb-3" style={{ fontSize: 48, color: '#2d3449' }}>manage_accounts</span>
@@ -276,13 +305,8 @@ export default function ManageUsersIndex({ users = [], filters = {} }) {
                                     </td>
                                 </tr>
                             ) : (
-                                paginatedUsers.map((user, idx) => (
-                                    <tr key={user.id} onClick={() => setSelectedUser(user)}
-                                        className="cursor-pointer transition-colors group"
-                                        style={{ background: idx % 2 === 1 ? 'rgba(34,42,61,0.4)' : 'transparent', borderTop: '1px solid rgba(68,70,86,0.1)' }}
-                                        onMouseEnter={e => e.currentTarget.style.background = '#222a3d'}
-                                        onMouseLeave={e => e.currentTarget.style.background = idx % 2 === 1 ? 'rgba(34,42,61,0.4)' : 'transparent'}
-                                    >
+                                list.map((user, idx) => (
+                                    <tr key={user.id} onClick={() => setSelectedUser(user)} className="cursor-pointer transition-colors group">
                                         <td className="px-6 py-5">
                                             <div className="flex items-center gap-3">
                                                 <Avatar name={user.name} size={40} shape="rounded-lg" />
@@ -312,43 +336,45 @@ export default function ManageUsersIndex({ users = [], filters = {} }) {
                             )}
                         </tbody>
                     </table>
-
-                    {/* Pagination */}
-                    <div className="mt-auto px-6 py-4 flex items-center justify-between" style={{ borderTop: '1px solid rgba(68,70,86,0.15)' }}>
-                        <span className="text-xs" style={{ color: '#8e8fa2' }}>
-                            {users.length > 0
-                                ? `Showing ${(page - 1) * USERS_PAGE_SIZE + 1}–${Math.min(page * USERS_PAGE_SIZE, users.length)} of ${users.length} users`
-                                : 'No users'}
-                        </span>
-                        <div className="flex items-center gap-2">
+                    {/* --- PAGINATION CONTROLS --- */}
+                    {(pagination?.last_page ?? lastPage) > 1 && (
+                        <div className="flex items-center justify-between p-6 border-t border-[#444656]/10 rounded-b-xl" style={{ background: '#131b2e' }}>
                             <button
-                                onClick={() => setPage(p => Math.max(1, p - 1))}
-                                disabled={page === 1}
-                                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all"
-                                style={page === 1 ? { color: '#475569', cursor: 'not-allowed' } : { color: '#bbc3ff', background: 'rgba(45,52,73,0.4)' }}
+                                onClick={() => prevUrl ? router.get(prevUrl, {}, { preserveState: true, preserveScroll: true }) : (currentPage > 1 && router.get(route('admin.users.index'), { search, page: currentPage - 1 }, { preserveState: true, preserveScroll: true }))}
+                                disabled={!prevUrl && currentPage <= 1}
+                                className="px-5 py-2 text-sm font-semibold text-slate-400 bg-[#222a3d] rounded-lg hover:text-white hover:bg-[#3d5afe]/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                             >
-                                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>chevron_left</span>
-                                Prev
+                                Previous
                             </button>
-                            <span className="text-[11px] font-mono px-2" style={{ color: '#8e8fa2' }}>{page} / {totalPages}</span>
+                            
+                            <div className="flex items-center gap-3 text-sm text-slate-400">
+                                <input
+                                    type="number"
+                                    value={pageInput}
+                                    onChange={(e) => setPageInput(e.target.value)}
+                                    onKeyDown={handlePageJump}
+                                    onBlur={handlePageJump}
+                                    className="w-16 text-center bg-[#131b2e] border border-[#444656]/30 rounded-md text-white focus:ring-2 focus:ring-[#3d5afe]/50 focus:border-[#3d5afe] outline-none py-1.5 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-all"
+                                    min="1"
+                                    max={pagination?.last_page ?? lastPage}
+                                />
+                                <span>/ {pagination?.last_page ?? lastPage}</span>
+                            </div>
+                            
                             <button
-                                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                                disabled={page === totalPages}
-                                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-bold uppercase tracking-wider transition-all"
-                                style={page === totalPages ? { color: '#475569', cursor: 'not-allowed' } : { color: '#bbc3ff', background: 'rgba(45,52,73,0.4)' }}
+                                onClick={() => nextUrl ? router.get(nextUrl, {}, { preserveState: true, preserveScroll: true }) : (currentPage < (pagination?.last_page ?? lastPage) && router.get(route('admin.users.index'), { search, page: currentPage + 1 }, { preserveState: true, preserveScroll: true }))}
+                                disabled={!nextUrl && currentPage >= (pagination?.last_page ?? lastPage)}
+                                className="px-5 py-2 text-sm font-semibold text-slate-400 bg-[#222a3d] rounded-lg hover:text-white hover:bg-[#3d5afe]/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
                             >
                                 Next
-                                <span className="material-symbols-outlined" style={{ fontSize: 14 }}>chevron_right</span>
                             </button>
                         </div>
-                    </div>
+                    )}
                 </div>
             </section>
 
             {selectedUser && (
                 <UserPanel user={selectedUser} onClose={() => setSelectedUser(null)}
-                    onSuspend={() => doSuspend(selectedUser)}
-                    onResetPassword={() => doResetPassword(selectedUser)}
                     onDelete={() => doDelete(selectedUser)} />
             )}
         </AdminLayout>

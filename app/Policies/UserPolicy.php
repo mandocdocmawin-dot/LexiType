@@ -3,55 +3,34 @@
 namespace App\Policies;
 
 use App\Models\User;
+use Illuminate\Auth\Access\Response;
 
 class UserPolicy
 {
     /**
-     * Determine if the user can view any users.
+     * Determine whether the user can view the model.
      */
-    public function viewAny(User $admin): bool
+    public function view(User $user, User $model): bool
     {
-        return $admin->isAdminOrModerator();
+        // Pwedeng makita ng user ang sarili niya, o ng admin ang lahat
+        return $user->id === $model->id || $user->role === 'admin';
     }
 
     /**
-     * Determine if the user can view a specific user.
+     * Determine whether the user can update the model.
      */
-    public function view(User $admin, User $user): bool
+    public function update(User $user, User $model): bool
     {
-        return $admin->isAdminOrModerator();
+        // Ang user lang ang pwedeng mag-edit ng sarili niyang profile, o kaya ay admin
+        return $user->id === $model->id || $user->role === 'admin';
     }
 
     /**
-     * Determine if the user can create new users.
+     * Determine whether the user can delete the model.
      */
-    public function create(User $admin): bool
+    public function delete(User $user, User $model): bool
     {
-        return $admin->isAdmin();
-    }
-
-    /**
-     * Determine if the user can update a user.
-     */
-    public function update(User $admin, User $user): bool
-    {
-        return $admin->isAdmin();
-    }
-
-    /**
-     * Determine if the user can delete the model.
-     */
-    public function delete(User $admin, User $user): bool
-    {
-        // Only administrators can delete users
-        return $admin->isAdmin();
-    }
-
-    /**
-     * Determine if the user can permanently delete the model.
-     */
-    public function forceDelete(User $admin, User $user): bool
-    {
-        return $admin->isAdmin();
+        // Ang user lang ang pwedeng mag-delete ng sarili niyang account, o kaya ay admin
+        return $user->id === $model->id || $user->role === 'admin';
     }
 }
