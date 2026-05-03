@@ -35,8 +35,8 @@ class ManageUsersController extends Controller
                 $query->where('status', $request->status);
             })
             ->orderBy('created_at', 'desc')
-            ->get()
-            ->map(function ($user) {
+            ->paginate(7)
+            ->through(function ($user) { // Use 'through' instead of 'map'
                 return [
                     'id' => $user->id,
                     'name' => $user->name,
@@ -44,12 +44,8 @@ class ManageUsersController extends Controller
                     'role' => $user->role,
                     'status' => $user->status ?? 'Active',
                     'bio' => $user->bio,
-                    
-                    // 2. Map the dynamically calculated averages (defaulting to 0 if no sessions exist)
-                    // We use round() to keep the numbers clean for the UI.
                     'avg_wpm' => round($user->avg_wpm ?? 0),
                     'accuracy' => round($user->accuracy ?? 0, 1),
-                    
                     'account_type' => 'free',
                     'mfa_enabled' => false,
                     'last_login_at' => null,
@@ -91,7 +87,7 @@ class ManageUsersController extends Controller
                 'created_at' => $user->created_at,
             ],
         ]);
-    }
+    }   
 
     /**
      * Show the form to create a new user.

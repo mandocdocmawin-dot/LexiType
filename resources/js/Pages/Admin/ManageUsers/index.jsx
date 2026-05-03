@@ -203,6 +203,37 @@ export default function ManageUsersIndex({ users = [], filters = {} }) {
     const [activeTab, setActiveTab] = useState('Directory');
     const [flashMsg, setFlashMsg] = useState(flash?.success ?? null);
     const debounceRef = useRef(null);
+    // Normalize the `users` prop. If backend sent a paginator object
+    // it will typically be { data: [...], current_page, last_page, ... }
+    // If the backend sent a plain array (old behavior) we keep that too.
+    const list = Array.isArray(users) ? users : (users?.data ?? []);
+    const pagination = users && !Array.isArray(users) ? (users.meta ?? users) : null;
+    const currentPage = pagination?.current_page ?? pagination?.currentPage ?? 1;
+    const lastPage = pagination?.last_page ?? pagination?.lastPage ?? 1;
+    const prevUrl = users && !Array.isArray(users) ? users.prev_page_url : null;
+    const nextUrl = users && !Array.isArray(users) ? users.next_page_url : null;
+
+    const [pageInput, setPageInput] = useState(currentPage);
+
+    useEffect(() => { setPageInput(currentPage); }, [currentPage]);
+
+    const handlePageJump = (e) => {
+        if (e.key === 'Enter' || e.type === 'blur') {
+            let page = parseInt(pageInput);
+
+            if (isNaN(page) || page < 1) page = 1;
+            if (page > lastPage) page = lastPage;
+
+            setPageInput(page);
+
+            if (page !== currentPage) {
+                router.get(route('admin.users.index'), { search, role, status, page: page }, { 
+                    preserveState: true, 
+                    preserveScroll: true 
+                });
+            }
+        }
+    };
 
     useEffect(() => {
         if (flash?.success) {
@@ -297,7 +328,7 @@ export default function ManageUsersIndex({ users = [], filters = {} }) {
                             </tr>
                         </thead>
                         <tbody style={{ borderTop: '1px solid rgba(68,70,86,0.1)' }}>
-                            {users.length === 0 ? (
+                            {list.length === 0 ? (
                                 <tr>
                                     <td colSpan={6} className="px-6 py-20 text-center">
                                         <span className="material-symbols-outlined block mb-3" style={{ fontSize: 48, color: '#2d3449' }}>manage_accounts</span>
@@ -305,13 +336,8 @@ export default function ManageUsersIndex({ users = [], filters = {} }) {
                                     </td>
                                 </tr>
                             ) : (
-                                users.map((user, idx) => (
-                                    <tr key={user.id} onClick={() => setSelectedUser(user)}
-                                        className="cursor-pointer transition-colors group"
-                                        style={{ background: idx % 2 === 1 ? 'rgba(34,42,61,0.4)' : 'transparent', borderTop: '1px solid rgba(68,70,86,0.1)' }}
-                                        onMouseEnter={e => e.currentTarget.style.background = '#222a3d'}
-                                        onMouseLeave={e => e.currentTarget.style.background = idx % 2 === 1 ? 'rgba(34,42,61,0.4)' : 'transparent'}
-                                    >
+                                list.map((user, idx) => (
+                                    <tr key={user.id} onClick={() => setSelectedUser(user)} className="cursor-pointer transition-colors group">
                                         <td className="px-6 py-5">
                                             <div className="flex items-center gap-3">
                                                 <Avatar name={user.name} size={40} shape="rounded-lg" />
@@ -352,6 +378,40 @@ export default function ManageUsersIndex({ users = [], filters = {} }) {
                             )}
                         </tbody>
                     </table>
+                    {/* --- PAGINATION CONTROLS --- */}
+                    {(pagination?.last_page ?? lastPage) > 1 && (
+                        <div className="flex items-center justify-between p-6 border-t border-[#444656]/10 rounded-b-xl" style={{ background: '#131b2e' }}>
+                            <button
+                                onClick={() => prevUrl ? router.get(prevUrl, {}, { preserveState: true, preserveScroll: true }) : (currentPage > 1 && router.get(route('admin.users.index'), { search, role, status, page: currentPage - 1 }, { preserveState: true, preserveScroll: true }))}
+                                disabled={!prevUrl && currentPage <= 1}
+                                className="px-5 py-2 text-sm font-semibold text-slate-400 bg-[#222a3d] rounded-lg hover:text-white hover:bg-[#3d5afe]/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                            >
+                                Previous
+                            </button>
+                            
+                            <div className="flex items-center gap-3 text-sm text-slate-400">
+                                <input
+                                    type="number"
+                                    value={pageInput}
+                                    onChange={(e) => setPageInput(e.target.value)}
+                                    onKeyDown={handlePageJump}
+                                    onBlur={handlePageJump}
+                                    className="w-16 text-center bg-[#131b2e] border border-[#444656]/30 rounded-md text-white focus:ring-2 focus:ring-[#3d5afe]/50 focus:border-[#3d5afe] outline-none py-1.5 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none transition-all"
+                                    min="1"
+                                    max={pagination?.last_page ?? lastPage}
+                                />
+                                <span>/ {pagination?.last_page ?? lastPage}</span>
+                            </div>
+                            
+                            <button
+                                onClick={() => nextUrl ? router.get(nextUrl, {}, { preserveState: true, preserveScroll: true }) : (currentPage < (pagination?.last_page ?? lastPage) && router.get(route('admin.users.index'), { search, role, status, page: currentPage + 1 }, { preserveState: true, preserveScroll: true }))}
+                                disabled={!nextUrl && currentPage >= (pagination?.last_page ?? lastPage)}
+                                className="px-5 py-2 text-sm font-semibold text-slate-400 bg-[#222a3d] rounded-lg hover:text-white hover:bg-[#3d5afe]/20 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+                            >
+                                Next
+                            </button>
+                        </div>
+                    )}
                 </div>
             </section>
 
