@@ -40,7 +40,7 @@ export default function SystemTypingTextsIndex({ texts = [], categories = [] }) 
     const [deleteModal, setDeleteModal] = useState(false);
 
     // Pagination
-    const ITEMS_PER_PAGE = 4;
+    const ITEMS_PER_PAGE = 5;
     const [currentPage, setCurrentPage] = useState(1);
     const totalPages = Math.ceil(texts.length / ITEMS_PER_PAGE) || 1;
     const paginatedTexts = texts.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
@@ -145,7 +145,9 @@ export default function SystemTypingTextsIndex({ texts = [], categories = [] }) 
                     {/* ── Master List Panel ── */}
                     <section className="w-96 flex flex-col z-10 shadow-2xl"
                         style={{ background: '#131b2e', borderRight: '1px solid rgba(68,70,86,0.15)' }}>
-                        <div className="p-6">
+                        
+                        {/* 1. Adjusted padding (px-6 pt-6 pb-2) to fix the large gap below the button */}
+                        <div className="px-6 pt-6">
                             <button onClick={startCreate}
                                 className="w-full py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
                                 style={{ fontFamily: 'Space Grotesk', background: '#3d5afe', color: '#f1f0ff', boxShadow: '0 8px 24px rgba(61,90,254,0.2)' }}>
@@ -153,7 +155,9 @@ export default function SystemTypingTextsIndex({ texts = [], categories = [] }) 
                                 Create New Typing Text
                             </button>
                         </div>
-                        <div className="flex-1 overflow-y-auto px-4 pb-6 space-y-2">
+
+                        {/* 2. Changed overflow-y-auto to overflow-hidden to remove the scrollbar */}
+                        <div className="flex-1 overflow-hidden px-4 pb-6 space-y-2 pt-3">
                             <div className="px-2 py-2 flex justify-between items-center">
                                 <span className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#64748b' }}>Recent Typing Texts</span>
                                 <span className="text-[10px] font-bold tracking-widest" style={{ color: '#475569' }}>{texts.length} total</span>
@@ -253,10 +257,10 @@ export default function SystemTypingTextsIndex({ texts = [], categories = [] }) 
                         <div className="absolute -right-24 -top-24 w-96 h-96 rounded-full" style={{ background: 'rgba(61,90,254,0.05)', filter: 'blur(120px)' }} />
 
                         {(selected || creating) ? (
-                            <div className="flex-1 overflow-y-auto p-12 relative z-20">
-                                <div className="max-w-4xl mx-auto space-y-12">
-
-
+                            <div className="flex-1 overflow-hidden p-8 relative z-20">
+                                
+                                {/* 2. Inner content container: Tinanggal ang 'max-w-4xl' para maging full screen */}
+                                <div className="space-y-12">
 
                                     {/* Editor */}
                                     <div className="space-y-8">

@@ -72,7 +72,7 @@ class SystemTypingTextController extends Controller
      */
     public function show(SystemTypingText $typingText)
     {
-        $this->authorize('view', $typingText);
+        Gate::authorize('view', $typingText);
 
         return inertia('Admin/SystemTypingTexts/show', [
             'text' => $typingText,
@@ -84,7 +84,7 @@ class SystemTypingTextController extends Controller
      */
     public function edit(SystemTypingText $typingText)
     {
-        $this->authorize('update', $typingText);
+        Gate::authorize('update', $typingText);
 
         $categories = SystemTypingText::select('category')->distinct()->pluck('category');
 
@@ -125,7 +125,7 @@ class SystemTypingTextController extends Controller
      */
     public function destroy(SystemTypingText $typingText)
     {
-        $this->authorize('delete', $typingText);
+       Gate::authorize('delete', $typingText);
 
         $typingText->delete();
 
