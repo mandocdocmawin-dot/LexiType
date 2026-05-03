@@ -78,14 +78,17 @@ export default function Navbar({ auth }) {
                                 {/* System Texts Button (Icon with Text) */}
                                 <Link 
                                     href={route('admin.typing-texts.index')}
-                                    className={`group px-3 py-2 rounded-lg flex items-center gap-2 transition-all ${
+                                    className={`group relative p-2 rounded-lg flex items-center justify-center transition-all ${
                                         url?.startsWith('/admin/typing-texts') 
                                             ? 'text-[#bbc3ff] bg-[#222a3d]/50' 
                                             : 'text-slate-400 hover:text-white hover:bg-[#222a3d]/30'
                                     }`}
+                                    aria-label="System Texts"
                                 >
                                     <span className="material-symbols-outlined">text_snippet</span>
-                                    <span className="text-sm font-semibold">System Texts</span>
+                                    <span className="absolute top-full left-1/2 -translate-x-1/2 mt-1 px-2 py-1 bg-[#222a3d] text-xs text-slate-200 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-50">
+                                        System Texts
+                                    </span>
                                 </Link>
 
                                 {/* Manage Users Button */}

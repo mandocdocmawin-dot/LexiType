@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\SystemTypingText;
+use Illuminate\Support\Facades\Gate;
 
 class SystemTypingTextController extends Controller
 {
@@ -12,9 +13,7 @@ class SystemTypingTextController extends Controller
      */
     public function index(Request $request)
     {
-        // Assuming user-scoped records based on the original controller's logic
-        $typingTexts = SystemTypingText::where('user_id', auth()->id())
-            ->orderByDesc('created_at')
+        $typingTexts = SystemTypingText::orderByDesc('created_at')
             ->get([
                 'id',
                 'user_id',
@@ -25,8 +24,11 @@ class SystemTypingTextController extends Controller
                 'created_at',
             ]);
 
+        $categories = SystemTypingText::select('category')->distinct()->pluck('category');
+
         return inertia('Admin/SystemTypingTexts/index', [
             'texts' => $typingTexts,
+            'categories' => $categories,
         ]);
     }
 
@@ -35,7 +37,10 @@ class SystemTypingTextController extends Controller
      */
     public function create()
     {
-        return inertia('Admin/SystemTypingTexts/create');
+        $categories = SystemTypingText::select('category')->distinct()->pluck('category');
+        return inertia('Admin/SystemTypingTexts/create', [
+            'categories' => $categories,
+        ]);
     }
 
     /**
@@ -81,6 +86,8 @@ class SystemTypingTextController extends Controller
     {
         $this->authorize('update', $typingText);
 
+        $categories = SystemTypingText::select('category')->distinct()->pluck('category');
+
         return inertia('Admin/SystemTypingTexts/edit', [
             'text' => $typingText->only([
                 'id',
@@ -89,6 +96,7 @@ class SystemTypingTextController extends Controller
                 'difficulty_level',
                 'is_active',
             ]),
+            'categories' => $categories,
         ]);
     }
 
@@ -97,7 +105,7 @@ class SystemTypingTextController extends Controller
      */
     public function update(Request $request, SystemTypingText $typingText)
     {
-        $this->authorize('update', $typingText);
+        Gate::authorize('update', $typingText);
 
         $validated = $request->validate([
             'category' => 'sometimes|required|string|max:255',

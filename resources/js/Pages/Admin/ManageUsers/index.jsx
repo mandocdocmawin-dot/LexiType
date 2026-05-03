@@ -263,11 +263,10 @@ export default function ManageUsersIndex({ users = [], filters = {} }) {
 
 
             {/* ── Content ── */}
-            {/* Added mt-20 to push this section down below the Navbar */}
-            <section className="p-8 mt-20 space-y-8 flex-1">
+            <section className="px-8 pb-8 pt-24 flex flex-col h-screen overflow-hidden gap-6">
 
-                {/* Filter Bar */}
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-6 rounded-xl" style={{ background: '#131b2e' }}>
+                {/* Filter Bar (flex-none ensures it doesn't shrink) */}
+                <div className="flex-none flex flex-col lg:flex-row lg:items-center justify-between gap-4 p-6 rounded-xl" style={{ background: '#131b2e' }}>
                     <div className="relative flex-1 max-w-lg">
                         <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2" style={{ color: '#8e8fa2' }}>search</span>
                         <input type="text" placeholder="Search by username, email or ID..."
@@ -284,61 +283,67 @@ export default function ManageUsersIndex({ users = [], filters = {} }) {
                     </div>
                 </div>
 
-                {/* Table */}
-                <div className="rounded-xl overflow-hidden" style={{ background: '#131b2e' }}>
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr style={{ background: '#171f33' }}>
-                                {['User', 'Email Address', 'Joined Date', 'Actions'].map((col, i) => (
-                                    <th key={col} className={`px-6 py-4 text-[11px] uppercase font-bold tracking-[0.15em]${i === 3 ? ' text-right' : ''}`} style={{ color: '#8e8fa2' }}>
-                                        {col}
-                                    </th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody style={{ borderTop: '1px solid rgba(68,70,86,0.1)' }}>
-                            {list.length === 0 ? (
+                {/* Table Container (flex-1 and min-h-0 forces it to fit inside the screen) */}
+                <div className="flex flex-col flex-1 min-h-0 rounded-xl overflow-hidden" style={{ background: '#131b2e' }}>
+                    
+                    {/* Makes only the table body scrollable if needed */}
+                    <div className="flex-1 overflow-y-auto">
+                        <table className="w-full text-left border-collapse">
+                            {/* Sticky Header so it stays on top */}
+                            <thead className="sticky top-0 z-10" style={{ background: '#171f33' }}>
                                 <tr>
-                                    <td colSpan={4} className="px-6 py-20 text-center">
-                                        <span className="material-symbols-outlined block mb-3" style={{ fontSize: 48, color: '#2d3449' }}>manage_accounts</span>
-                                        <p className="text-sm" style={{ color: '#8e8fa2' }}>No users found</p>
-                                    </td>
+                                    {['User', 'Email Address', 'Joined Date', 'Actions'].map((col, i) => (
+                                        <th key={col} className={`px-6 py-4 text-[11px] uppercase font-bold tracking-[0.15em]${i === 3 ? ' text-right' : ''}`} style={{ color: '#8e8fa2' }}>
+                                            {col}
+                                        </th>
+                                    ))}
                                 </tr>
-                            ) : (
-                                list.map((user, idx) => (
-                                    <tr key={user.id} onClick={() => setSelectedUser(user)} className="cursor-pointer transition-colors group">
-                                        <td className="px-6 py-5">
-                                            <div className="flex items-center gap-3">
-                                                <Avatar name={user.name} size={40} shape="rounded-lg" />
-                                                <div>
-                                                    <div className="text-sm font-bold" style={{ color: '#dae2fd' }}>{user.name}</div>
-                                                    <div className="text-[10px]" style={{ color: '#8e8fa2' }}>ID: KL-{String(user.id).padStart(5, '0')}</div>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-5 text-sm" style={{ color: '#c5c5d9' }}>{user.email}</td>
-                                        <td className="px-6 py-5 text-sm" style={{ color: '#c5c5d9' }}>{formatDate(user.created_at)}</td>
-                                        <td className="px-6 py-5 text-right">
-                                            <div className="flex items-center justify-end gap-1">
-                                                <Link href={route('admin.users.show', user.id)} onClick={e => e.stopPropagation()} title="View" className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-indigo-500/10" style={{ color: '#818cf8' }}>
-                                                    <span className="material-symbols-outlined text-lg">visibility</span>
-                                                </Link>
-                                                <Link href={route('admin.users.edit', user.id)} onClick={e => e.stopPropagation()} title="Edit" className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-amber-500/10" style={{ color: '#f59e0b' }}>
-                                                    <span className="material-symbols-outlined text-lg">edit</span>
-                                                </Link>
-                                                <button onClick={e => { e.stopPropagation(); if(confirm(`Delete ${user.name}?`)) doDelete(user); }} title="Delete" className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-red-500/10" style={{ color: '#ffb2b7' }}>
-                                                    <span className="material-symbols-outlined text-lg">delete</span>
-                                                </button>
-                                            </div>
+                            </thead>
+                            <tbody style={{ borderTop: '1px solid rgba(68,70,86,0.1)' }}>
+                                {list.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={4} className="px-6 py-20 text-center">
+                                            <span className="material-symbols-outlined block mb-3" style={{ fontSize: 48, color: '#2d3449' }}>manage_accounts</span>
+                                            <p className="text-sm" style={{ color: '#8e8fa2' }}>No users found</p>
                                         </td>
                                     </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
+                                ) : (
+                                    list.map((user, idx) => (
+                                        <tr key={user.id} onClick={() => setSelectedUser(user)} className="cursor-pointer transition-colors group hover:bg-[#171f33]">
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-3">
+                                                    <Avatar name={user.name} size={40} shape="rounded-lg" />
+                                                    <div>
+                                                        <div className="text-sm font-bold" style={{ color: '#dae2fd' }}>{user.name}</div>
+                                                        <div className="text-[10px]" style={{ color: '#8e8fa2' }}>ID: KL-{String(user.id).padStart(5, '0')}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 text-sm" style={{ color: '#c5c5d9' }}>{user.email}</td>
+                                            <td className="px-6 py-4 text-sm" style={{ color: '#c5c5d9' }}>{formatDate(user.created_at)}</td>
+                                            <td className="px-6 py-4 text-right">
+                                                <div className="flex items-center justify-end gap-1">
+                                                    <Link href={route('admin.users.show', user.id)} onClick={e => e.stopPropagation()} title="View" className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-indigo-500/10" style={{ color: '#818cf8' }}>
+                                                        <span className="material-symbols-outlined text-lg">visibility</span>
+                                                    </Link>
+                                                    <Link href={route('admin.users.edit', user.id)} onClick={e => e.stopPropagation()} title="Edit" className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-amber-500/10" style={{ color: '#f59e0b' }}>
+                                                        <span className="material-symbols-outlined text-lg">edit</span>
+                                                    </Link>
+                                                    <button onClick={e => { e.stopPropagation(); if(confirm(`Delete ${user.name}?`)) doDelete(user); }} title="Delete" className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-red-500/10" style={{ color: '#ffb2b7' }}>
+                                                        <span className="material-symbols-outlined text-lg">delete</span>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+
                     {/* --- PAGINATION CONTROLS --- */}
                     {(pagination?.last_page ?? lastPage) > 1 && (
-                        <div className="flex items-center justify-between p-6 border-t border-[#444656]/10 rounded-b-xl" style={{ background: '#131b2e' }}>
+                        <div className="flex-none flex items-center justify-between p-6 border-t border-[#444656]/10 rounded-b-xl" style={{ background: '#131b2e' }}>
                             <button
                                 onClick={() => prevUrl ? router.get(prevUrl, {}, { preserveState: true, preserveScroll: true }) : (currentPage > 1 && router.get(route('admin.users.index'), { search, page: currentPage - 1 }, { preserveState: true, preserveScroll: true }))}
                                 disabled={!prevUrl && currentPage <= 1}
