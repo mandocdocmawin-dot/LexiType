@@ -30,15 +30,15 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(User::class, UserPolicy::class);
         Gate::policy(SystemTypingText::class, SystemTypingTextPolicy::class);
 
-        if (DB::getDriverName() === 'sqlite') {
-            $path = DB::getConfig('database');
-            if ($path && $path !== ':memory:' && ! file_exists($path)) {
-                touch($path);
-            }
-        }
+        // if (DB::getDriverName() === 'sqlite') {
+        //     $path = DB::getConfig('database');
+        //     if ($path && $path !== ':memory:' && ! file_exists($path)) {
+        //         touch($path);
+        //     }
+        // }
 
-        if (! app()->runningInConsole() && ! Schema::hasTable('users')) {
-            Artisan::call('migrate', ['--force' => true]);
-        }
+        // if (! app()->runningInConsole() && ! Schema::hasTable('users')) {
+        //     Artisan::call('migrate', ['--force' => true]);
+        // }
     }
 }
