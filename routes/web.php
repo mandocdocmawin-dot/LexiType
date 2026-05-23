@@ -43,7 +43,7 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     Route::get('/stats', [TypingSessionController::class, 'showStats'])->name('stats');
-    Route::resource('feedback', UserFeedbackController::class)->only(['store']);
+    // Route::resource('feedback', UserFeedbackController::class)->only(['store']);
     Route::post('/ai-analysis', [AIAnalysisController::class, 'getAnalysis']);
 });
 
@@ -58,4 +58,5 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::resource('typing-texts', SystemTypingTextController::class);
 });
 
+Route::post('/feedback', [UserFeedbackController::class, 'store']);
 require __DIR__.'/auth.php';
