@@ -22,7 +22,8 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->validateCsrfTokens(except: [
-            'feedback', // Palitan mo ito kung iba ang tawag sa route niyo (hal. 'api/feedback' o 'send-feedback')
+            'feedback', 
+            'feedback/*',
         ]);
 
         //
