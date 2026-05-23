@@ -21,11 +21,6 @@ return Application::configure(basePath: dirname(__DIR__))
             'admin' => \App\Http\Middleware\EnsureUserIsAdmin::class,
         ]);
 
-        $middleware->validateCsrfTokens(except: [
-            'feedback', 
-            'feedback/*',
-        ]);
-
         //
     })
     ->withExceptions(function (Exceptions $exceptions): void {
