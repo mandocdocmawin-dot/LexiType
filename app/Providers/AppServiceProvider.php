@@ -8,6 +8,7 @@ use App\Models\SystemTypingText;
 use App\Policies\UserPolicy;
 use App\Policies\UserFeedbackPolicy;
 use App\Policies\SystemTypingTextPolicy;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Gate;
