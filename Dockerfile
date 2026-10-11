@@ -16,9 +16,12 @@ RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist
 COPY --chown=www-data:www-data . .
 COPY --from=assets --chown=www-data:www-data /app/public/build ./public/build
 
+COPY --chmod=755 docker/99-seed.sh /etc/entrypoint.d/99-seed.sh
+
 RUN composer dump-autoload --optimize \
     && mkdir -p database \
     && touch database/database.sqlite
 
 # Auto-run ng migrations, storage:link, at optimize tuwing mag-start
 ENV AUTORUN_ENABLED=true
+
