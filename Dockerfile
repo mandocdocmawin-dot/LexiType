@@ -2,7 +2,7 @@
 FROM node:22-alpine AS assets
 WORKDIR /app
 COPY package*.json .npmrc* ./
-RUN npm ci
+RUN npm ci --legacy-peer-deps
 COPY . .
 RUN npm run build
 
